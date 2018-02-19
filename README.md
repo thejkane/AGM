@@ -51,10 +51,16 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Luby B
 
 + Connected Components
-  + Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
   + Traversal Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Priority Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
+
++ Breadth First Search
+  + Chaotic Breadth First Search (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Level-Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
+
++ Single Source Shortest-Paths
   
 1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
 2. Optimized Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
