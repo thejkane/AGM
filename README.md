@@ -201,7 +201,7 @@ E.g.,
 
 [5] Kanewala, Thejaka Amila, Marcin Zalewski, and Andrew Lumsdaine. "Abstract graph machine." arXiv preprint arXiv:1604.04772 (2016).
 
-[6] Firoz, Jesun Sahariar, et al. "Importance of runtime considerations in performance engineering of large-scale distributed graph algorithms." European Conference on Parallel Processing. Springer, Cham, 2015.
+[6] Firoz, J. S., Kanewala, T. A., Zalewski, M., Barnas, M., & Lumsdaine, A. (2015, August). Importance of runtime considerations in performance engineering of large-scale distributed graph algorithms. In European Conference on Parallel Processing (pp. 553-564). Springer, Cham.
 
 [7] Edmonds, Nick, Jeremiah Willcock, and Andrew Lumsdaine. (2013)
 "Expressing Graph Algorithms Using Generalized Active Messages". In
