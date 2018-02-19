@@ -139,11 +139,11 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Traversal Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Priority Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
+  + Shiloach-Vishkin Connected Components (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
 
 + Breadth First Search
   + Chaotic Breadth First Search (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Level-Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
+  + Level-Synchronous Breadth First Search (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
 
 + Single Source Shortest-Paths
   + Chaotic Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
@@ -154,8 +154,10 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + KLA Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + KLA Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + KLA Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Delta-Stepping Shortes Paths (Authors : Nick Edmonds, Andrew Lumsdaine)
+  + Delta-Stepping Shortes Paths (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
   + Delta-Stepping Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta-Stepping Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta-Stepping Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+
++ PageRank (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
   
