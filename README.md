@@ -79,7 +79,7 @@ initial.push_back(WorkItem(source, 0));
 
 DistMap distance_state(distmap.begin(), get(boost::vertex_index, g));
 
-typedef bfs_pf<DistMap> ProcessingFunction;
+typedef bfs_pf<Graph, DistMap> ProcessingFunction;
 ProcessingFunction pf(g, distance_state, sr);
 
 // Level Synchronous Ordering
@@ -146,7 +146,16 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Level-Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
 
 + Single Source Shortest-Paths
+  + Chaotic Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Chaotic Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Chaotic Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Chaotic Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + KLA Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + KLA Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + KLA Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + KLA Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Delta-Stepping Shortes Paths (Authors : Nick Edmonds, Andrew Lumsdaine)
+  + Delta-Stepping Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Delta-Stepping Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Delta-Stepping Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   
-1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
-2. Optimized Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
-3. Delta-Stepping Shortes Paths (Authors : Nick Edmonds, Andrew Lumsdaine)
