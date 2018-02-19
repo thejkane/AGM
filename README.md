@@ -191,11 +191,23 @@ E.g.,
 
 ### Publications
 
-[4] Edmonds, Nick, Jeremiah Willcock, and Andrew Lumsdaine. (2013)
+[1] Kanewala, Thejaka Amila, Marcin Zalewski, and Andrew Lumsdaine. "Families of Graph Algorithms: SSSP Case Study." European Conference on Parallel Processing. Springer, Cham, 2017.
+
+[2] [Best Student Candidate Paper] Kanewala, Thejaka, Marcin Zalewski, and Andrew Lumsdaine. "Distributed-memory fast maximal independent set." High Performance Extreme Computing Conference (HPEC), 2017 IEEE. IEEE, 2017.
+
+[3] Kanewala, Thejaka, Marcin Zalewski, and Andrew Lumsdaine. "Parallel Asynchronous Distributed-Memory Maximal Independent Set Algorithm with Work Ordering." 2017 IEEE 24th International Conference on High Performance Computing (HiPC). IEEE, 2017.
+
+[4] Kanewala, Thejaka, et al. "Families of Distributed Memory Parallel Graph Algorithms from Self-Stabilizing Kernels-An SSSP Case Study." arXiv preprint arXiv:1706.05760 (2017).
+
+[5] Kanewala, Thejaka Amila, Marcin Zalewski, and Andrew Lumsdaine. "Abstract graph machine." arXiv preprint arXiv:1604.04772 (2016).
+
+[6] Firoz, Jesun Sahariar, et al. "Importance of runtime considerations in performance engineering of large-scale distributed graph algorithms." European Conference on Parallel Processing. Springer, Cham, 2015.
+
+[7] Edmonds, Nick, Jeremiah Willcock, and Andrew Lumsdaine. (2013)
 "Expressing Graph Algorithms Using Generalized Active Messages". In
 (Eds.) *International Conference on Supercomputing*, Eugene, Oregon.
 
-[5] Edmonds, Nicholas, et al. (2010) "Design of a Large-Scale
+[8] Edmonds, Nicholas, et al. (2010) "Design of a Large-Scale
 Hybrid-Parallel Graph Library". In (Eds.) *International Conference
 on High Performance Computing, Student Research Symposium*, Goa,
 India.
