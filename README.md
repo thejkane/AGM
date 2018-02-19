@@ -19,3 +19,18 @@ Figure~XX shows a very high-level overview of the Abstract Graph Machine. A grap
 More detials of the abstract model can be found in [1], [2], [3].
 
 ### Extended Abstract Graph Machine (EAGM)
+
+The extended AGM explores spatial and temporal ordering and derives less synchronous distributed, shared-memory parallel graph algorithms than AGM algorithms. For the EAGM orderings can be peformed at global memory level, node memory level, NUMA memory or at the thread memory level. A description of EAGM achieves spatial and temporal ordering is shown in Figure~YY.
+
+
+### Graph Kernels in AGM/EAGM Model
+The AGM/EAGM graph processing framework is implemented as part of Parallel Boost Graph Library, version 2 (PBGL2). Graph structure definitions are based on the graph structure definitions provided by the PBGL2 (Compressed Sparse Row and Adjacency List). Further, AGM/EAGM model uses 1D graph distributions.
+
+1. Breadth First Search -- With a single processing function, we can achieve multiple algorithms by changing ordering. E.g., The chaotic BFS does not perform  any ordering, but Level synchronous BFS performs ordering by level.
+2. Single Source Shortest Path -- Multiple algorithms can be derived by changing orderings. This includes Delta-Stepping, KLA, Bellman-Ford, Distributed-Control.
+3. Connected Components
+4. Maximal Independent Set (MIS) -- The FIX MIS.
+5. Graph Coloring -- The original processing function is based on Jones-Plassman Graph Coloring.
+6. k-Core Decomposition
+7. PageRank
+8. Triangle Counting (In Progress)
