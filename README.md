@@ -166,3 +166,10 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
 + MPI implementations (e.g., OpenMPI or CrayMPICH)
 + Boost (Thoroughly tested with 1.55)
 + LibCDS (Thoroughly tested with 2.1.0)
+
+Make sure Boost and LibCDS are compiled with the proper compiler wrappers.
+
+For communication AGM/EAGM framework uses MPI based Active Messaging system : AM++.
+#### AM++
+Configure AM++ (inside runtime folder) as follows:
+`$ ./configure --prefix=<installation prefix> --enable-builtin-atomics --enable-threading=<MPI threading mode, multiple, serialized> --with-nbc=stub --with-boost=<boost install path> cc="<MPI C compiler wrapper, e.g., mpicc>" CXX="<MPI C++ compiler wrapper, e.g., mpicxx>"`
