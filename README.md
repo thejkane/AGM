@@ -188,3 +188,29 @@ To build only the required kernels, you can use build.sh file. Set BOOST_INSTALL
 E.g.,
 
 `$ ./build.sh sssp_family`
+
+### Publications
+
+Bibliography
+------------
+
+.. [Edmonds:PhD]
+   Edmonds, Nick. 2013. Active Messages as a Spanning Model For Parallel
+   Graph Computation, available at http://www.cs.indiana.edu/~ngedmond/dissertation.pdf
+
+.. [edmonds13:ics]
+   Edmonds, Nick, Jeremiah Willcock, and Andrew Lumsdaine. (2013)
+   "Expressing Graph Algorithms Using Generalized Active Messages". In
+   (Eds.) *International Conference on Supercomputing*, Eugene, Oregon.
+
+.. [edmonds10:hipc]
+   Edmonds, Nick, Torsten Hoefler, and Andrew Lumsdaine. (2010) "A
+   Space-Efficient Parallel Algorithm for Computing Betweenness
+   Centrality in Distributed Memory". In (Eds.) *International
+   Conference on High Performance Computing*, Goa, India.
+
+.. [edmonds10:hipc-srs]
+   Edmonds, Nicholas, et al. (2010) "Design of a Large-Scale
+   Hybrid-Parallel Graph Library". In (Eds.) *International Conference
+   on High Performance Computing, Student Research Symposium*, Goa,
+   India.
