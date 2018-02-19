@@ -71,6 +71,27 @@ public:
 };
 ```
 
+3. States and AGM execution:
+```cpp
+DistMap distance_state(distmap.begin(), get(boost::vertex_index, g));
+
+typedef bfs_pf<DistMap> ProcessingFunction;
+ProcessingFunction pf(g, distance_state, sr);
+
+// BFS algorithm
+typedef agm<Graph,
+            WorkItem,
+            ProcessingFunction,
+            StrictWeakOrdering,
+            RuntimeModelGen> bfs_agm_t;
+
+bfs_agm_t bfsalgo(pf,
+                  ordering,
+                  rtmodelgen);
+
+time_type elapsed = bfsalgo(initial, runtime_params);
+```
+
 More detials of the abstract model can be found in [1], [2], [3].
 
 ### Extended Abstract Graph Machine (EAGM)
