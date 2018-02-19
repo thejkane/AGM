@@ -59,7 +59,7 @@ private:
 };
 ```
 
-2. The WorkItem definition and the definition of the processing function:
+2. The ordering definition as a functor:
 ```cpp
 template<int index>
 struct level : public base_ordering {
