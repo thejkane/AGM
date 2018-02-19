@@ -176,3 +176,15 @@ Configure AM++ (inside runtime folder) as follows:
 `$ ./configure --prefix=<installation prefix> --enable-builtin-atomics --enable-threading=<MPI threading mode, multiple, serialized> --with-nbc=stub --with-boost=<boost install path> cc="<MPI C compiler wrapper, e.g., mpicc>" CXX="<MPI C++ compiler wrapper, e.g., mpicxx>"`
 
 `$ make install`
+
+#### AGM/EAGM and Other Graph Kernels
+
+You can use CMake to build everything but it will take considerable amount of time. Therefore,
+it is advisable to build only the kernels you need. These kernals are localted in TODO.
+To build only the required kernels, you can use build.sh file. Set BOOST_INSTALL, AMPP_INSTALL and LIBCDS_INSTALL to appropriated paths and build the kernel as follows:
+
+`$ ./build.sh <kernel>`
+
+E.g.,
+
+`$ ./build.sh sssp_family`
