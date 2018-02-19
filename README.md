@@ -73,6 +73,10 @@ public:
 
 3. States and AGM execution:
 ```cpp
+// Initial work item set
+std::vector<WorkItem> initial;
+initial.push_back(WorkItem(source, 0));
+
 DistMap distance_state(distmap.begin(), get(boost::vertex_index, g));
 
 typedef bfs_pf<DistMap> ProcessingFunction;
