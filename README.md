@@ -23,7 +23,7 @@ More detials of the abstract model can be found in [1], [2], [3].
 The extended AGM explores spatial and temporal ordering and derives less synchronous distributed, shared-memory parallel graph algorithms than AGM algorithms. For the EAGM orderings can be peformed at global memory level, node memory level, NUMA memory or at the thread memory level. A description of EAGM achieves spatial and temporal ordering is shown in Figure~YY.
 
 
-### Graph Kernels in AGM/EAGM Model
+### Graph Kernels Available in AGM/EAGM Model
 The AGM/EAGM graph processing framework is implemented as part of Parallel Boost Graph Library, version 2 (PBGL2). Graph structure definitions are based on the graph structure definitions provided by the PBGL2 (Compressed Sparse Row and Adjacency List). Further, AGM/EAGM model uses 1D graph distributions.
 
 1. Breadth First Search -- With a single processing function, we can achieve multiple algorithms by changing ordering. E.g., The chaotic BFS does not perform  any ordering, but Level synchronous BFS performs ordering by level.
@@ -34,3 +34,16 @@ The AGM/EAGM graph processing framework is implemented as part of Parallel Boost
 6. k-Core Decomposition
 7. PageRank
 8. Triangle Counting (In Progress)
+
+### Other Graph Kernels (Non AGM/EAGM Graph Kernels)
+In addition to AGM/EAGM graph kernels we have number of different graph kernels that does not use the AGM/EAGM model. They are as follows:
+
+1. Triangle Counting (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+1.a Striped Triangle Counting
+1.b Blocked Triangle Counting
+1.c Traversal based Triangle Counting
+
+
+1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
+2. Optimized Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
+3. Delta-Stepping Shortes Paths (Authors : Nick Edmonds, Andrew Lumsdaine)
