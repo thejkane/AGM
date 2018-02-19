@@ -39,9 +39,9 @@ The AGM/EAGM graph processing framework is implemented as part of Parallel Boost
 In addition to AGM/EAGM graph kernels we have number of different graph kernels that does not use the AGM/EAGM model. They are as follows:
 
 #### Triangle Counting (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
--Striped Triangle Counting
--Blocked Triangle Counting
--Traversal based Triangle Counting
+- Striped Triangle Counting
+- Blocked Triangle Counting
+- Traversal based Triangle Counting
 
 
 1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
