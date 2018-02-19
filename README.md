@@ -16,7 +16,7 @@ Figure~XX shows a very high-level overview of the Abstract Graph Machine. A grap
 5. A set of initial WorkItems.
 6. A definition of a strict weak ordering relation on WorkItem.
 
-# Example : Breadth First Search
+### Example : Breadth First Search
 
 ```cpp
 // WorkItem definition
