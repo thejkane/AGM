@@ -130,6 +130,8 @@ bfs_eagm_t bfsalgo(rtmodelgen,
 ...
 ```
 
+![](https://pandao.github.io/webpage/eagm/eagm-node-numa-delta-thread.pdf)
+
 ### Graph Kernels Available in AGM/EAGM Model
 The AGM/EAGM graph processing framework is implemented as part of Parallel Boost Graph Library, version 2 (PBGL2). Graph structure definitions are based on the graph structure definitions provided by the PBGL2 (Compressed Sparse Row and Adjacency List). Further, AGM/EAGM model uses 1D graph distributions.
 
