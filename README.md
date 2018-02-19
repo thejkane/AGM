@@ -18,6 +18,7 @@ Figure~XX shows a very high-level overview of the Abstract Graph Machine. A grap
 
 ### Example : Breadth First Search
 
+1. The WorkItem definition and the definition of the processing function:
 ```cpp
 // WorkItem definition
 typedef std::tuple<Vertex, Level> WorkItem;
@@ -58,6 +59,17 @@ private:
 };
 ```
 
+2. The WorkItem definition and the definition of the processing function:
+```cpp
+template<int index>
+struct level : public base_ordering {
+public:
+  template <typename T>
+  bool operator()(T i, T j) {
+    return (std::get<index>(i) < std::get<index>(j));
+  }
+};
+```
 
 More detials of the abstract model can be found in [1], [2], [3].
 
