@@ -106,6 +106,29 @@ More detials of the abstract model can be found in [1], [2], [3].
 
 The extended AGM explores spatial and temporal ordering and derives less synchronous distributed, shared-memory parallel graph algorithms than AGM algorithms. For the EAGM orderings can be peformed at global memory level, node memory level, NUMA memory or at the thread memory level. A description of EAGM achieves spatial and temporal ordering is shown in Figure~YY.
 
+For extended AGM we pass a configuration that defines ordering for each memory level. E.g.,
+```cpp
+...
+CHAOTIC_ORDERING_T ch;
+LEVEL_ORDERING_T level;
+EAGMConfig config = boost::graph::agm::create_eagm_config(level, //global ordering
+                                                   ch, // node ordering
+                                                   ch, // numa ordering
+                                                   ch); // thread ordering
+
+// BFS algorithm
+typedef eagm<Graph,
+             WorkItem,
+             ProcessingFunction,
+             EAGMConfig,
+             RuntimeModelGen> bfs_eagm_t;
+
+bfs_eagm_t bfsalgo(rtmodelgen,
+                   config,
+                   pf,
+                   initial);
+...
+```
 
 ### Graph Kernels Available in AGM/EAGM Model
 The AGM/EAGM graph processing framework is implemented as part of Parallel Boost Graph Library, version 2 (PBGL2). Graph structure definitions are based on the graph structure definitions provided by the PBGL2 (Compressed Sparse Row and Adjacency List). Further, AGM/EAGM model uses 1D graph distributions.
