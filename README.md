@@ -43,13 +43,19 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Blocked Triangle Counting
   + Traversal based Triangle Counting
 
-+ Maximal Independent Set
++ Maximal Independent Set (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + FIX
   + FIX-Bucket
   + FIX-PQ
   + Luby A
   + Luby B
 
++ Connected Components
+  + Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
+  + Traversal Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Priority Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + Delta Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  
 1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
 2. Optimized Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
 3. Delta-Stepping Shortes Paths (Authors : Nick Edmonds, Andrew Lumsdaine)
