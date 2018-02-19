@@ -161,3 +161,8 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
 
 + PageRank (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
   
+### Installation
+#### Pre-requisites
++ MPI implementations (e.g., OpenMPI or CrayMPICH)
++ Boost (Thoroughly tested with 1.55)
++ LibCDS (Thoroughly tested with 2.1.0)
