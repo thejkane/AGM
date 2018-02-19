@@ -6,6 +6,7 @@ Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph alg
 #### Authors of AGM : Thejaka Amila Kanewala, Marcin Zalewski, Andrew Lumsdaine
 
 **Table of Contents**
+
 [TOCM]
 
 [TOC]
