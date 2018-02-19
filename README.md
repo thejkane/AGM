@@ -35,10 +35,8 @@ The AGM/EAGM graph processing framework is implemented as part of Parallel Boost
 7. PageRank
 8. Triangle Counting (In Progress)
 
-```csharp
-private void index(){
-  MessageBox.Show("hello world");
-}
+```cpp
+typedef std::tuple<Vertex, Level> WorkItem;
 ```
 
 ### Other Graph Kernels (Non AGM/EAGM Graph Kernels)
