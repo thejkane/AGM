@@ -172,4 +172,5 @@ Make sure Boost and LibCDS are compiled with the proper compiler wrappers.
 For communication AGM/EAGM framework uses MPI based Active Messaging system : AM++.
 #### AM++
 Configure AM++ (inside runtime folder) as follows:
+
 `$ ./configure --prefix=<installation prefix> --enable-builtin-atomics --enable-threading=<MPI threading mode, multiple, serialized> --with-nbc=stub --with-boost=<boost install path> cc="<MPI C compiler wrapper, e.g., mpicc>" CXX="<MPI C++ compiler wrapper, e.g., mpicxx>"`
