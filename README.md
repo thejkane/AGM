@@ -78,6 +78,10 @@ DistMap distance_state(distmap.begin(), get(boost::vertex_index, g));
 typedef bfs_pf<DistMap> ProcessingFunction;
 ProcessingFunction pf(g, distance_state, sr);
 
+// Level Synchronous Ordering
+typedef boost::graph::agm::level<1> StrictWeakOrdering;
+StrictWeakOrdering ordering;
+
 // BFS algorithm
 typedef agm<Graph,
             WorkItem,
