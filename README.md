@@ -43,6 +43,12 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Blocked Triangle Counting
   + Traversal based Triangle Counting
 
++ Maximal Independent Set
+  + FIX
+  + FIX-Bucket
+  + FIX-PQ
+  + Luby A
+  + Luby B
 
 1. Level Synchronous Breadth First Search (Authors : Nick Edmonds, Andrew Lumsdaine)
 2. Optimized Shiloach-Vishkin Connected Components (Authors : Nick Edmonds, Andrew Lumsdaine)
