@@ -40,44 +40,40 @@ The AGM/EAGM graph processing framework is implemented as part of Parallel Boost
 typedef std::tuple<Vertex, Level> WorkItem;
 
 // The processing function
-template<typename State>
-  struct bfs_pf {
+// the processing function                                                                                                                                                                                
+template<typename Graph, typename State>
+struct bfs_pf {
 
-  public:
-    bfs_pf(const Graph& _rg, State& _st, agm_work_stats& _sr) : g(_rg),
-                                                       vlevel(_st),
-                                                       stats(_sr){}
-  private:
-    const Graph& g;
-    State& vlevel;
-    agm_work_stats& stats;
+public:
+  bfs_pf(const Graph& _rg, State& _st) : g(_rg),
+                                         vlevel(_st){}
+  template<typename buckets>
+  void operator()(const WorkItem& wi,
+                  int tid,
+                  buckets& outset) {
 
-  public:
+    Vertex v = std::get<0>(wi);
+    int level = std::get<1>(wi);
+    int old_level = vlevel[v], last_old_level;
+    while(level < old_level) {
+      last_old_level = old_level;
+      old_level = boost::parallel::val_compare_and_swap(&vlevel[v], old_level, level);
 
-    template<typename buckets>
-    void operator()(const WorkItem& wi,
-                    int tid,
-                    buckets& outset) {
-
-      Vertex v = std::get<0>(wi);
-      int level = std::get<1>(wi);
-      int old_level = vlevel[v], last_old_level;
-      while(level < old_level) {
-        last_old_level = old_level;
-        old_level = boost::parallel::val_compare_and_swap(&vlevel[v], old_level, level);
-
-        if (last_old_level == old_level) {
-          BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
-            Vertex u = boost::target(e, g);
-            WorkItem generated(u, (level+1));
-            outset.push(generated, tid);
-          }
-          return;
+      if (last_old_level == old_level) {
+        BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+          Vertex u = boost::target(e, g);
+          WorkItem generated(u, (level+1));
+          outset.push(generated, tid);
         }
+        return;
       }
     }
-  };
+  }
 
+private:
+  const Graph& g;
+  State& vlevel;
+};
 ```
 
 ### Other Graph Kernels (Non AGM/EAGM Graph Kernels)
