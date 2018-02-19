@@ -1,0 +1,30 @@
+#!/bin/bash -l
+
+export ALGO=DC
+export Q_NAME=debug
+export NUM_NODES=128
+export JOB_NAME=myjob
+export WALL_TIME="01:00:00"
+export MAX_THREADS=32
+export NUM_SOURCES=8
+export POLL_TASKS=4
+export FLUSH=20
+export RECV_DEPTH=4
+export COALESCING_SIZES=40000,100000
+export KLEVELS=1
+export DATA_STRUCTURES=nodeq,numaq,threadq,buffer,ms_nodeq,ms_numaq
+export REDUCTION_CACHE_SIZES=18
+
+#SBATCH -p debug
+#SBATCH -N 128
+#SBATCH -t 01:00:00
+#SBATCH -J dcserial
+
+echo "############ Running $ALGO and Variations ####################"
+
+for scale in 32
+do
+    echo "####### Running Scale : $scale, Nodes : $NUM_NODES, Threads : $MAX_THREADS, KLEVELS : $KLEVELS, Coalescing : $COALESCING_SIZES, Poll : $POLL_TASKS, Flush : $FLUSH, Depth : $RECV_DEPTH #######"
+    echo "######### Data Structures : $DATA_STRUCTURES, Reduction Cache Sizes : $REDUCTION_CACHE_SIZES #######"
+    srun -n $NUM_NODES -c $MAX_THREADS ../bin/serialized/performance_test --poll-task $POLL_TASKS --threads $MAX_THREADS --scale $scale --degree 16 --num-sources $NUM_SOURCES --coalescing-size $COALESCING_SIZES --flush $FLUSH --ds $DATA_STRUCTURES --eager-limit 10 --max-weight 100 --receive-depth $RECV_DEPTH --priority_coalescing_size 43000 --with-no-reductions --without-per-thread-reductions --run_dc
+done

@@ -1,0 +1,1 @@
+aprun -n 2 -d 1 -b -e GRAPHLAB_SUBNET_ID=10.128.0.0 -e GRAPHLAB_SUBNET_MASK=255.252.0.0 -e GRAPHLAB_THREADS_PER_WORKER=2 ./sssp --source 0 --powerlaw 1000

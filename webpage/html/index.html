@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>PBGL2</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/pbgl2"><img alt="PBGL2" class="align-middle" src="pbgl-logo.png" /></a></h1>
+<h2 class="subtitle" id="parallel-boost-graph-library-2-active-messages-version">Parallel Boost Graph Library 2 (Active Messages Version)</h2>
+
+<!-- Copyright (C) 2009-2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<div class="section" id="overview">
+<h1>Overview</h1>
+<p>This is a beta version of a message-based implementation of the Parallel Boost Graph Library (Parallel
+BGL), a generic parallel graph library built on and fashioned after
+the Boost Graph Library (BGL). This version builds on Active Pebbles
+model and its AM++ (<a class="reference external" href="http://www.crest.iu.edu/projects/am++/">http://www.crest.iu.edu/projects/am++/</a>) implementation. If you have any questions,
+comments, or require help with the Parallel BGL, please see the
+Parallel BGL web page.</p>
+<p>We strongly suggest building and executing the test suite before
+embarking on writing your own programs.  Familiarity with the Boost
+Graph Library
+(<a class="reference external" href="http://www.boost.org/libs/graph/doc/table_of_contents.html">http://www.boost.org/libs/graph/doc/table_of_contents.html</a>) is
+assumed.</p>
+<p>The overview of concepts of PBGL2 can be found in the
+cited papers.  The previous versions (on which this one builds), can
+be found here:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.osl.iu.edu/research/pbgl/software/">http://www.osl.iu.edu/research/pbgl/software/</a></li>
+<li><a class="reference external" href="http://www.boost.org/libs/graph_parallel/">http://www.boost.org/libs/graph_parallel/</a></li>
+</ul>
+</div>
+<div class="section" id="get-pbgl2">
+<h1>Get PBGL2</h1>
+<p>PBGL2 can be downloaded here:</p>
+<blockquote>
+<a class="reference external" href="pbgl2-1.0.tar.gz">pbgl2-1.0.tar.gz</a></blockquote>
+<p>For installation, see the documentation included in the release.</p>
+</div>
+<div class="section" id="contact-information">
+<h1>Contact Information</h1>
+<p>Contact <tt class="docutils literal"><span class="pre">pbgl2-users&#64;crest.iu.edu</span></tt> with questions and bug reports.</p>
+</div>
+<div class="section" id="bibliography">
+<h1>Bibliography</h1>
+<table class="docutils citation" frame="void" id="edmonds-phd" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[Edmonds:PhD]</td><td>Edmonds, Nick. 2013. Active Messages as a Spanning Model For Parallel
+Graph Computation, available at <a class="reference external" href="http://www.cs.indiana.edu/~ngedmond/dissertation.pdf">http://www.cs.indiana.edu/~ngedmond/dissertation.pdf</a></td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="edmonds13-ics" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[edmonds13:ics]</td><td>Edmonds, Nick, Jeremiah Willcock, and Andrew Lumsdaine. (2013)
+&quot;Expressing Graph Algorithms Using Generalized Active Messages&quot;. In
+(Eds.) <em>International Conference on Supercomputing</em>, Eugene, Oregon.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="edmonds10-hipc" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[edmonds10:hipc]</td><td>Edmonds, Nick, Torsten Hoefler, and Andrew Lumsdaine. (2010) &quot;A
+Space-Efficient Parallel Algorithm for Computing Betweenness
+Centrality in Distributed Memory&quot;. In (Eds.) <em>International
+Conference on High Performance Computing</em>, Goa, India.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="edmonds10-hipc-srs" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label">[edmonds10:hipc-srs]</td><td>Edmonds, Nicholas, et al. (2010) &quot;Design of a Large-Scale
+Hybrid-Parallel Graph Library&quot;. In (Eds.) <em>International Conference
+on High Performance Computing, Student Research Symposium</em>, Goa,
+India.</td></tr>
+</tbody>
+</table>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Nicholas Edmonds
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2014-02-22 12:23 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

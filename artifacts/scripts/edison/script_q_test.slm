@@ -1,0 +1,20 @@
+#!/bin/bash -l
+
+export Q_NAME=debug
+export NUM_NODES=2
+export JOB_NAME=myjob
+export WALL_TIME="01:00:00"
+
+echo $NUM_NODES
+
+#SBATCH -p debug
+#SBATCH -N 2
+#SBATCH -t 01:00:00
+#SBATCH -J pqtest
+
+for scale in 20 21 22 23 24 25 26 27
+do
+	echo "################ Running Scale $scale ##############################"
+	srun -n 2 -c 24 ./bin/performance_test --poll-task 1 --threads 32 --scale $scale --degree 16 --num-sources 3 --coalescing-size 42000 --distribution-coalescing-size 142000 --flush 18 --ds nodeq,ms_nodeq --eager-limit 10 --max-weight 100 --receive-depth 4 --priority_coalescing_size 43000 --with-no-reductions --without-per-thrad-reductions --run_dc
+done
+#srun -N 2 -n 2 -c 32 ./bin/performance_test --poll-task 1 --threads 32 --scale 20 --degree 16 --num-sources 3 --coalescing-size 42000 --distribution-coalescing-size 142000 --flush 18 --ds nodeq --eager-limit 10 --max-weight 100 --receive-depth 4 --priority_coalescing_size 43000 --with-no-reductions --without-per-thrad-reductions --run_dc

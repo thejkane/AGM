@@ -1,0 +1,22 @@
+digraph g {
+  subgraph cluster_0 {
+    n0[label="0"];
+    n1[label="0"];
+    n2[label="0"];
+  }
+
+  n0 -> n2;
+  n1 -> n1;
+  n1 -> n3;
+  n1 -> n4;
+  n2 -> n1;
+  n2 -> n3;
+  subgraph cluster_1 {
+    n3[label="0"];
+    n4[label="0"];
+  }
+
+  n3 -> n4;
+  n4 -> n0;
+  n4 -> n1;
+}
