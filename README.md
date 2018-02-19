@@ -23,7 +23,6 @@ Figure~XX shows a very high-level overview of the Abstract Graph Machine. A grap
 typedef std::tuple<Vertex, Level> WorkItem;
 
 // The processing function
-// the processing function                                                                                                                                                                                
 template<typename Graph, typename State>
 struct bfs_pf {
 
