@@ -1,7 +1,7 @@
 # Abstract Graph Machine and Distributed, Shared-Memory Parallel Graph Kernels
 
 ### Overview
-Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithms as a function (AKA processing function) and an ordering (strict weak ordering relation). This repository contains an implementation of the AGM model, set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains few distributed, shared-memory parallel graph kernels that does not use the AGM model. For distributed communication, implementation uses MPI and a MPI based Active Messaging framework -- AM++. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high and execution include minimum overhead.
+Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ``processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains few distributed, shared-memory parallel graph kernels that does not use the AGM model. For distributed communication, implementation uses MPI and a MPI based Active Messaging framework -- AM++. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high and execution include minimum overhead.
 
 #### Authors of AGM : Thejaka Amila Kanewala, Marcin Zalewski, Andrew Lumsdaine
 
