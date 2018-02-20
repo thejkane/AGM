@@ -154,7 +154,7 @@ processing function.
 8. Triangle Counting (In Progress)
 
 
-### Other Graph Kernels (Non AGM/EAGM Graph Kernels)
+### Other Graph Kernels (None AGM/EAGM Graph Kernels)
 In addition to AGM/EAGM graph kernels we have number of different graph kernels that does not use the AGM/EAGM model. They are as follows:
 
 + Triangle Counting (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
