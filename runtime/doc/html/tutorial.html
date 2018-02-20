@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>AM++ Tutorial</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+<link rel="stylesheet" href="/opt/local/lib/python2.4/site-packages/docutils/writers/html4css1/math.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo-tutorial">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/am++"><img alt="AM++" class="align-middle" src="ampp-logo.png" /></a> Tutorial</h1>
+
+<!-- Copyright (C) 2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<p>This tutorial gives a roundup of the AM++ interface.  The tutorial is based on the code in the <a class="reference external" href="tutorial.cpp">tutorial.cpp</a> file that is part of the AM++ distribution (use <tt class="docutils literal">make tutorial</tt> in the distribution directory to compile it).  The goal is an overview of the interface, and the program does not do anything interesting.</p>
+<p>First, one has to create an environment:</p>
+<pre class="literal-block">
+int main(int argc, char** argv) {
+(void)argc; (void)argv;
+
+bool use_threads = true;
+environment env = mpi_environment(argc, argv, use_threads);
+</pre>
+<p>Environment takes the arguments <tt class="docutils literal">argv</tt> and the flag <tt class="docutils literal">use_threads</tt> that indicates whether threading is desired or not.  The environment sets up MPI as necessary, and if threading is requested it checks whether threading is supported by the MPI implementation.  Furthermore, it registers built-in datatypes (the programmer needs to register their own datatypes, see <a class="reference external" href="mpi_datatypes.html">MPI Datatypes</a>.  When the environment object is destroyed, it cleans up the underlying MPI environment as necessary.  Next, we need to create a <em>transport</em>:</p>
+<pre class="literal-block">
+transport trans = env.create_transport();
+</pre>
+<p>Transport contains all the information that AM++ needs to send and receive messages, to manage threading, and so on.  For example, transport can be used to obtain the current rank and the total number of ranks:</p>
+<pre class="literal-block">
+transport::rank_type r = trans.rank(), s = trans.size();
+</pre>
+<p>Next, we will create some <em>message types</em> that we can then use to send messages.  The simplest message type is created directly by the transport:</p>
+<pre class="literal-block">
+message_type&lt;int&gt; mt = trans.create_message_type&lt;int&gt;();
+mt-&gt;set_max_count(100);
+mt.set_handler(my_handler());
+</pre>
+<p>The message type <tt class="docutils literal">mt</tt> can be used to send and receive values of type <tt class="docutils literal">int</tt>.  The <tt class="docutils literal">max_count</tt> specifies the maximum number of messages to be received at one time (it cannot be 0).  Finally, <tt class="docutils literal">set_handler</tt> is used to specify a function that will <em>handle</em> the incoming messages, and``my_handler`` is defined as follows:</p>
+<pre class="literal-block">
+struct my_handler {
+  // Raw handler
+  void operator()(int source, const int* buf, int count) const {};
+};
+</pre>
+<p>When the handler is called by AM++, it receives the source rank of the messages <tt class="docutils literal">source</tt>, the data for the messages <tt class="docutils literal">buf</tt>, and the <tt class="docutils literal">count</tt> of the received messages which is also the size of <tt class="docutils literal">buf</tt>.  The count is less or equal to the specified <tt class="docutils literal">max_count</tt>.  AM++ provides more complex message types.  For example, coalescing message type is created as follows:</p>
+<pre class="literal-block">
+basic_coalesced_message_type&lt;int, my_handler&gt; mt2(basic_coalesced_message_type_gen(100), trans);
+mt2.set_handler(my_handler());
+</pre>
+<p>The basic coalesced message provides a simple coalescing layer.  The <tt class="docutils literal">basic_coalesced_message_type_gen</tt> is a rather long-named way to specify the maximum count of coalesced messages.  In this case, it is probably an overkill, but it conforms to the general convention of AM++ where a message type takes a generator as the first argument, transport as the second argument, and additional, message type specific arguments after that.  Coalesced messages require extending <tt class="docutils literal">my_handler</tt> with a new operator:</p>
+<pre class="literal-block">
+void operator()(int source, int data) const {};
+</pre>
+<p>Coalesced message type puts many small messages into a one large message, and it handles <tt class="docutils literal">max_count</tt> from the basic message type itself.  When it receives the large coalesced message, it invokes the handler function for each packed data (in this case an <tt class="docutils literal">int</tt>).  Because of that, the new handler has fewer arguments than a handler for a basic message type.</p>
+<p>Both the raw and the coalesced message types require direct addressing (note that handlers receive source rank as one of the arguments).  AM++ provides <em>object-based addressing</em> where the destination rank of a message is inferred from the data in the message.  Object-based addressing (and many other features) can be added to messages using <em>message type generators</em>.  The simplest generator that adds object-based addressing is the aptly named <tt class="docutils literal">simple_generator</tt>:</p>
+<pre class="literal-block">
+typedef simple_generator&lt;basic_coalesced_message_type_gen&gt; simple_gen;
+simple_gen::
+  call_result&lt;int, my_handler, owner_map_type, no_reduction_t&gt;::type
+  mt3(simple_gen(basic_coalesced_message_type_gen(100)),
+      trans, owner_map, no_reduction);
+</pre>
+<p>A generator template, in general, takes some underlying generator type and extra arguments.  In the case of the <tt class="docutils literal">simple_generator</tt> there is only one argument, <tt class="docutils literal">basic_coalesced_message_type_gen</tt>, that provides the underlying message type.  Every generator provides a member template <tt class="docutils literal">call_result</tt> that takes the arguments necessary to create the message type and statically generates the resulting message type member called, of course, <tt class="docutils literal">type</tt>.  In the case of <tt class="docutils literal">simple_generator</tt>, <tt class="docutils literal">call_result</tt> takes the data type sent in messages, <tt class="docutils literal">int</tt>, the handler, an <em>owner map</em>, and a <em>reduction</em>.  Owner map is an object that supports the <a class="reference external" href="http://www.boost.org/doc/libs/1_54_0/libs/property_map/doc/property_map.html">Boost Property Map</a> interface:</p>
+<pre class="literal-block">
+struct owner_map_type {};
+
+template&lt;typename T&gt;
+amplusplus::transport::rank_type
+get(const owner_map_type, const T) { return 0; } // something more complicated
+</pre>
+<p>This owner map just demonstrates the interface, always returning rank 0 (not a good idea in general).  <tt class="docutils literal">simple_generator</tt> also takes a reduction, but it is only to fit the general interface of generators.  Since it does not do anything with the reduction, we can pass in <tt class="docutils literal">no_reduction</tt> (an object provided by AM++) without any effect on functionality.  Because object-based addressing infers the address from the message type itself, the handler interface for object-addressed messages only takes the data itself (<tt class="docutils literal">int</tt> in this case):</p>
+<pre class="literal-block">
+void operator()(int data) const {};
+</pre>
+<p>Another layer that we can add to a message type is routing.  The idea behind routing is to use intermediate hops instead of sending messages directly to their destination.  One reason to do this is to decrease the number of buffers necessary to send messages.  With routing, each rank must keep buffers only for its intermediate neighbors in the routing scheme, not for all the other ranks as must be done without routing.  Routing can be layered on top of a coalescing message generator with <tt class="docutils literal">routing_generator</tt>:</p>
+<pre class="literal-block">
+typedef routing_generator&lt;basic_coalesced_message_type_gen, ring_routing&gt; routing_gen;
+routing_gen::
+  call_result&lt;int, my_handler, owner_map_type, no_reduction_t&gt;::type
+  mt4(routing_gen(basic_coalesced_message_type_gen(100), ring_routing(trans.rank(), trans.size())), trans, owner_map, no_reduction);
+</pre>
+<p>In this example, <tt class="docutils literal">routing_generator</tt> is instantiated with <tt class="docutils literal">basic_coalesced_message_type_gen</tt> and <tt class="docutils literal">ring_routing</tt> where each rank has two neighbors with all the ranks arranged into a ring.  Other examples of routing include <tt class="docutils literal">rook_routing</tt> (think about a rook on a chessboard finding the shortest route between any two squares) and <tt class="docutils literal">hypercube_routing</tt> (see <a class="reference external" href="http://en.wikipedia.org/wiki/Hypercube">Hypercube</a>).</p>
+<p>Caching is another very useful feature in AM++.  A caching message type can be created with one of the caching generators, for example, with the <tt class="docutils literal">per_thread_cache_generator</tt>:</p>
+<pre class="literal-block">
+typedef per_thread_cache_generator&lt;amplusplus::counter_coalesced_message_type_gen, amplusplus::no_routing&gt; cache_gen;
+cache_gen::call_result&lt;std::pair&lt;int, int&gt;, my_handler, owner_map_type, idempotent_combination_t&lt;max_value&gt; &gt;::type mt5(cache_gen(counter_coalesced_message_type_gen(1024), 20, no_routing(trans.rank(), trans.size())), trans, owner_map, idempotent_combination(max_value()));
+</pre>
+<p><tt class="docutils literal">per_thread_cache_generator</tt> equips each thread with a cache of the previously sent messages.  In this particular case, the cache is based on an <a class="reference external" href="http://en.wikipedia.org/wiki/Idempotence">idempotent</a> operation.  Because the operation is idempotent, the cache can be an optimized <a class="reference external" href="http://en.wikipedia.org/wiki/Cache_%28computing%29#Writing_policies">write-through</a> cache: a message is sent if the reduction produced a value different than the one in cache and is ignored otherwise.  Note that the data in this message type is changed to <tt class="docutils literal"><span class="pre">std::pair&lt;int,</span> int&gt;</tt>.  The default instantiation of idempotent_combination extracts the first <tt class="docutils literal">int</tt> in the pair as a key for the cache, and the second <tt class="docutils literal">int</tt> as a value.  So, for example, two pairs <tt class="docutils literal">(3,4)</tt> and <tt class="docutils literal">(5,4)</tt> are unrelated as far as the combination is concerned, and both would be written through cache, assuming that the cache was empty.  Two values <tt class="docutils literal">(3,4)</tt> and <tt class="docutils literal">(3,2)</tt> are related because of the same key (<tt class="docutils literal">3</tt> for the first element of the pair), and if <tt class="docutils literal">(3,4)</tt> was in cache, <tt class="docutils literal">(3,2)</tt> would not get written through cache because <span class="formula">2 &lt; 4</span>
+ (<tt class="docutils literal">max_value</tt> chooses the greater value).</p>
+<p>The message types we created can now be used to actually send messages:</p>
+<pre class="literal-block">
+shared_array&lt;int&gt; buf(new int[3]);
+{
+  scoped_epoch e(trans);
+  mt.message_being_built(0);
+  mt.send(buf.get(), 3, dest, empty_deleter());
+  mt2.send(1, dest);
+  mt3.send(2);
+  mt4.send(3);
+  mt5.send(std::make_pair(1,1));
+}
+</pre>
+<p>All AM++ messages must be sent within an <em>epoch</em>.  One way to create an epoch is with the <tt class="docutils literal">scoped_epoch</tt> object which employs the <a class="reference external" href="http://en.wikipedia.org/wiki/Resource_Acquisition_Is_Initialization">RAII</a> technique to acquire an epoch at the time of initialization and destroy an epoch at the end of the scope.  An epoch contains all the information about all sent messages, and it allows AM++ to perform tasks such as termination detection.  When the <tt class="docutils literal">scoped_epoch</tt> object <tt class="docutils literal">e</tt> is destroyed at the end of the scope, it invokes termination detection and it waits until no more messages are to be sent or delivered.  The important rule in AM++ is that no messages can be sent or received outside of an epoch.</p>
+<p>Note that non-coalesced message type needs a <em>deleter</em> in the send call.  The deleter is invoked by AM++ to handle potential deletion of the input buffer.  Such interface allows &quot;fire and forget&quot; sends with dynamically allocated buffers.  In our case, we have allocated the buffer with a <tt class="docutils literal">shared_array</tt>, so deletion is already taken care of, and we can use a &quot;fake&quot; <tt class="docutils literal">empty_deleter</tt>.</p>
+<p>This concludes the tutorial on the basic interface of AM++.  For complete reference, see the complete documentation.</p>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Jeremiah Willcock,
+Marcin Zalewski,
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2013-11-16 04:26 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1 @@
+$AMPP_MPI_EXEC tests/test_matvec

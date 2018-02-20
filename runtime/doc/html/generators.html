@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>AM++ Message Type Generators</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo-message-type-generators">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/am++"><img alt="AM++" class="align-middle" src="ampp-logo.png" /></a> Message Type Generators</h1>
+
+<!-- Copyright (C) 2009-2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#overview" id="id4">Overview</a></li>
+<li><a class="reference internal" href="#generator-concept" id="id5">Generator Concept</a><ul>
+<li><a class="reference internal" href="#notation" id="id6">Notation</a></li>
+<li><a class="reference internal" href="#associated-type-functions" id="id7">Associated Type Functions</a></li>
+<li><a class="reference internal" href="#simple-interface" id="id8">Simple Interface</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models" id="id9">Models</a><ul>
+<li><a class="reference internal" href="#non-coalesced-generator" id="id10">Non-Coalesced Generator</a></li>
+<li><a class="reference internal" href="#simple-generator" id="id11">Simple Generator</a></li>
+<li><a class="reference internal" href="#routing-generator" id="id12">Routing Generator</a></li>
+<li><a class="reference internal" href="#cache-generator" id="id13">Cache Generator</a></li>
+<li><a class="reference internal" href="#per-thread-cache-generator" id="id14">Per-Thread Cache Generator</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h1><a class="toc-backref" href="#id4">Overview</a></h1>
+<p>Message types encapsulate orthogonal properties such as coalescing and caching.  To allow layering of these orthogonal properties, AM++ provides <em>message generators</em> that take as input another message type generator and tack on some additional features.  When all the desired properties of a message type are captured by layering of the generators, the final message type can then be extracted.  Not only does such design allow for orthogonal treatment of concerns, but it also allows for generic code to receive a generator as input and then, in a generic fashion, to add additional features to that generator in a generic fashion.</p>
+<p>In general, generators have a compile time interface that generates the type of the resulting message type and a runtime interface for collecting the necessary inputs and for producing values of the final message type.</p>
+</div>
+<div class="section" id="generator-concept">
+<h1><a class="toc-backref" href="#id5">Generator Concept</a></h1>
+<div class="section" id="notation">
+<h2><a class="toc-backref" href="#id6">Notation</a></h2>
+<dl class="docutils">
+<dt><tt class="docutils literal">Gen</tt></dt>
+<dd>A type that models the Generator concept.</dd>
+<dt><tt class="docutils literal">ArgType</tt></dt>
+<dd>The argument type.</dd>
+<dt><tt class="docutils literal">HandlerType</tt></dt>
+<dd>A handler type that models one of the <a class="reference external" href="handlers.html">handler objects</a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal">Owner</tt></dt>
+<dd>The owner map type that models the <a class="reference external" href="oba.html#owner-map-concept">Owner Map</a> concept.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal">Reduction</tt></dt>
+<dd>The reduction type that models the <a class="reference external" href="reductions.html#reduction-concept">reduction concept</a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal">type</tt></dt>
+<dd>The result of message type computation.</dd>
+</dl>
+</div>
+<div class="section" id="associated-type-functions">
+<h2><a class="toc-backref" href="#id7">Associated Type Functions</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="29%" />
+<col width="28%" />
+<col width="43%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>Message type computation</td>
+<td><tt class="docutils literal">Gen:: template
+call_result&lt;ArgType,
+HandlerType, Owner,
+<span class="pre">Reduction&gt;::type</span></tt></td>
+<td>The result type must model one of
+the <a class="reference external" href="message_types.html#concepts">message type concepts</a>.</td>
+</tr>
+<tr><td>Message type constructor</td>
+<td><tt class="docutils literal">type(const Gen&amp; gen,
+transport, const
+Owner&amp;, const
+Reduction&amp;)</tt></td>
+<td>Constructor of the generated
+message type.</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="simple-interface">
+<h2><a class="toc-backref" href="#id8">Simple Interface</a></h2>
+<pre class="literal-block">
+template &lt;typename ArgType, typename HandlerType, typename Gen, typename Owner, typename Reduction = no_reduction_t&gt;
+struct message_type_generator_result;
+</pre>
+<p>This template allows a more direct access to the result of message type generation.  Instead having to first access <tt class="docutils literal">call_result</tt> and then its member <tt class="docutils literal">type</tt>, the result can be extracted directly:</p>
+<pre class="literal-block">
+typedef message_type_generator_result&lt;arg_t, hadler_t, gen_t, owner_t, reduction_t&gt;::type message_t;
+</pre>
+</div>
+</div>
+<div class="section" id="models">
+<h1><a class="toc-backref" href="#id9">Models</a></h1>
+<p>Built-in generators are defined in:</p>
+<blockquote>
+&lt;<tt class="docutils literal"><span class="pre">am++/message_type_generators.hpp</span></tt>&gt;</blockquote>
+<div class="section" id="non-coalesced-generator">
+<h2><a class="toc-backref" href="#id10">Non-Coalesced Generator</a></h2>
+<pre class="literal-block">
+struct noncoalesced_generator;
+</pre>
+<p>This generator produces a message type that models the <a class="reference external" href="message_types.html#object-based-concept">Object-Addressable Message Type</a> concept.  In contrast to other generators, this generator does not require another generator as input.</p>
+<p>This generator does not use the <tt class="docutils literal">Reduction</tt> argument in the <tt class="docutils literal">call_result</tt> type function, and the argument defaults to <tt class="docutils literal">no_reduction_t</tt>.</p>
+</div>
+<div class="section" id="simple-generator">
+<h2><a class="toc-backref" href="#id11">Simple Generator</a></h2>
+<pre class="literal-block">
+template &lt;typename CoalescingGen&gt;
+struct simple_generator;
+</pre>
+<p>The simple generator takes an underlying <a class="reference external" href="tbd">coalescing generator</a> and adds <a class="reference external" href="tbd">object-based addressing</a>.  This generator produces a message type that models the <a class="reference external" href="message_types.html#object-based-concept">Object-Addressable Message Type</a> concept.</p>
+<p class="rubric">Constructor</p>
+<pre class="literal-block">
+explicit simple_generator(const CoalescingGen&amp; coalescing_gen);
+</pre>
+</div>
+<div class="section" id="routing-generator">
+<h2><a class="toc-backref" href="#id12">Routing Generator</a></h2>
+<pre class="literal-block">
+template &lt;typename CoalescingGen, typename Routing&gt;
+struct routing_generator;
+</pre>
+<p>The routing generator takes an underlying <a class="reference external" href="tbd">coalescing generator</a> and adds <a class="reference external" href="tbd">object-based addressing</a> and <a class="reference external" href="tbd">routing</a>.</p>
+<p class="rubric">Constructor</p>
+<pre class="literal-block">
+explicit routing_generator(const CoalescingGen&amp; c, const Routing&amp; routing);
+</pre>
+</div>
+<div class="section" id="cache-generator">
+<h2><a class="toc-backref" href="#id13">Cache Generator</a></h2>
+<pre class="literal-block">
+template &lt;typename CoalescingGen, typename Routing&gt;
+struct cache_generator
+</pre>
+<p>The cache generator takes an underlying <a class="reference external" href="tbd">coalescing generator</a> and adds <a class="reference external" href="tbd">object-based addressing</a>, <a class="reference external" href="tbd">routing</a>, and <a class="reference external" href="tbd">caching</a>.  The type of caching is chosen appropriately, depending on the reduction type passed to <tt class="docutils literal">call_result</tt>.</p>
+<p class="rubric">Constructor</p>
+<pre class="literal-block">
+explicit cache_generator(const CoalescingGen&amp; c, unsigned int lg_size, const Routing&amp; routing = no_routing());
+</pre>
+</div>
+<div class="section" id="per-thread-cache-generator">
+<h2><a class="toc-backref" href="#id14">Per-Thread Cache Generator</a></h2>
+<pre class="literal-block">
+template &lt;typename CoalescingGen, typename Routing&gt;
+struct per_thread_cache_generator;
+</pre>
+<p>Same as <a class="reference internal" href="#cache-generator">Cache Generator</a> except that the cache is kept per thread, eliminating the need for synchronization.</p>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Jeremiah Willcock,
+Marcin Zalewski,
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2013-11-16 04:26 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

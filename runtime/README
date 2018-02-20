@@ -1,0 +1,7 @@
+This directory contains the AM++ distributed runtime.
+
+See the COPYING file for copying permission. The INSTALL file contains
+instalation instructions. See the amplusplus/doc directory for documentation.
+
+Copyright years in source files may be listed using range notation (e.g.,
+2010-2013).

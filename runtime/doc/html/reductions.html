@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>AM++ Reductions</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo-reductions">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/am++"><img alt="AM++" class="align-middle" src="ampp-logo.png" /></a> Reductions</h1>
+
+<!-- Copyright (C) 2009-2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#overview" id="id6">Overview</a></li>
+<li><a class="reference internal" href="#reduction-concept" id="id7">Reduction Concept</a><ul>
+<li><a class="reference internal" href="#notation" id="id8">Notation</a></li>
+<li><a class="reference internal" href="#valid-expressions" id="id9">Valid Expressions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#models" id="id10">Models</a><ul>
+<li><a class="reference internal" href="#void-reduction" id="id11">Void Reduction</a></li>
+<li><a class="reference internal" href="#duplicate-removal-reduction" id="id12">Duplicate Removal Reduction</a></li>
+<li><a class="reference internal" href="#combination-reduction" id="id13">Combination Reduction</a></li>
+<li><a class="reference internal" href="#idempotent-combination-reduction" id="id14">Idempotent Combination Reduction</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="overview">
+<h1><a class="toc-backref" href="#id6">Overview</a></h1>
+<p>In AM++, reductions are used in caching of messages.  Reductions, in general, decide how to combine two values, one in cache and one that is being written.</p>
+<p><a class="reference external" href="generators.html">Generators</a> that produce caching message types must &quot;know&quot; how to deal with a given reduction.  AM++ provides a set of built-in reductions that support the most common caching scenarios.</p>
+</div>
+<div class="section" id="reduction-concept">
+<h1><a class="toc-backref" href="#id7">Reduction Concept</a></h1>
+<div class="section" id="notation">
+<h2><a class="toc-backref" href="#id8">Notation</a></h2>
+<dl class="docutils">
+<dt>Reduction</dt>
+<dd>The reduction type</dd>
+</dl>
+</div>
+<div class="section" id="valid-expressions">
+<h2><a class="toc-backref" href="#id9">Valid Expressions</a></h2>
+<table border="1" class="docutils">
+<colgroup>
+<col width="27%" />
+<col width="45%" />
+<col width="27%" />
+</colgroup>
+<tbody valign="top">
+<tr><td>Check if a type is a
+valid reduction</td>
+<td><tt class="docutils literal">is_valid_reduction&lt;Reduction&gt;</tt></td>
+<td>This template must
+be <a class="reference external" href="http://www.boost.org/doc/libs/1_55_0/libs/mpl/doc/refmanual/bool.html">Boost MPL true
+or false</a>.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="section" id="models">
+<h1><a class="toc-backref" href="#id10">Models</a></h1>
+<div class="section" id="void-reduction">
+<h2><a class="toc-backref" href="#id11">Void Reduction</a></h2>
+<pre class="literal-block">
+typedef *implementation-defined* no_reduction_t;
+</pre>
+<p>This reduction is provided for the generators where no reduction is necessary.  If it is provided to a caching generator, then the resulting message type will not cache sent messages.</p>
+</div>
+<div class="section" id="duplicate-removal-reduction">
+<h2><a class="toc-backref" href="#id12">Duplicate Removal Reduction</a></h2>
+<pre class="literal-block">
+template &lt;typename Project, typename PolicyTag = make_default_policy&gt;
+struct duplicate_removal_t;
+</pre>
+<p>Duplicate removal policy removes duplicate messages.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">Project</tt></dt>
+<dd>The type of the projection that extracts a value from messages.  The values are compared in duplicate removal.  Note that the result of projection must support <a class="reference external" href="www.boost.org/libs/doc/html/boost/hash.html">boost::hash</a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal">PolicyTag</tt></dt>
+<dd>The type describing the policy for comparison of values.</dd>
+</dl>
+<p>Two convenience functions are provided for producing values of <tt class="docutils literal">duplicate_removal_t</tt>.  The first function produces the default policy removal, and the second can be used with custom policies:</p>
+<pre class="literal-block">
+template &lt;typename Project&gt; duplicate_removal_t&lt;Project&gt; duplicate_removal(const Project&amp; p);
+template &lt;typename Project, typename PolicyTag&gt; duplicate_removal_t&lt;Project, PolicyTag&gt; duplicate_removal(const Project&amp; p, const Policy&amp; po);
+</pre>
+<p>The default policy compares the values extracted by the projection using the <tt class="docutils literal">==</tt> operator.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">The default policy requires that the projection function's result be constructible from values of <tt class="docutils literal">size_t</tt>.</p>
+</div>
+<p class="rubric">Constructors</p>
+<pre class="literal-block">
+explicit duplicate_removal_t(const Project&amp; p);
+duplicate_removal_t(const Project&amp; p, const Policy&amp; po);
+</pre>
+<p class="rubric">Custom Policies</p>
+<p>To provide a custom policy, a few steps are necessary:</p>
+<ol class="arabic simple">
+<li>A policy must be defined.  The policy must provide the following members:</li>
+</ol>
+<dl class="docutils">
+<dt><tt class="docutils literal">stored_type</tt></dt>
+<dd>The type of the values stored in the cache.</dd>
+<dt><tt class="docutils literal">stored_type stored_value(const Arg&amp; d) const</tt></dt>
+<dd>A function which converts values of type <tt class="docutils literal">Arg</tt> (the type of message date) into values of type <tt class="docutils literal">stored_value</tt>.</dd>
+</dl>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">Step 3 describes how policies receive the <tt class="docutils literal">Arg</tt> type.</p>
+</div>
+<dl class="docutils">
+<dt><tt class="docutils literal">bool match(const Arg&amp; d, stored_type stored) const</tt></dt>
+<dd>A function matching stored values to values of type <tt class="docutils literal">Arg</tt>.</dd>
+<dt><tt class="docutils literal">size_t hash(stored_type v, size_t size) const</tt></dt>
+<dd>A function producing hashes for stored values.  Hashes produced must be smaller than <tt class="docutils literal">size</tt>.</dd>
+<dt><tt class="docutils literal">stored_type dummy_value(int h, size_t size) const</tt></dt>
+<dd>This function produces values of stored_type that do not hash to <tt class="docutils literal">hash(h, size)</tt>.</dd>
+</dl>
+<ol class="arabic simple" start="2">
+<li>A tag must be defined.  The tag is a type that will be used to identify the policy.</li>
+<li>The <tt class="docutils literal">get_policy_type</tt> must be specialized for the new policy.  It is defined like this:</li>
+</ol>
+<pre class="literal-block">
+template &lt;typename Project, typename Policy, typename Arg&gt;
+struct get_policy_type {
+  typedef Policy type;
+  static type get_policy(const Project&amp;, const Policy&amp; p) {return p;}
+};
+</pre>
+<p>For the default policy, it is specialized as follows:</p>
+<pre class="literal-block">
+struct get_policy_type&lt;Project, make_default_policy, Arg&gt; {
+  typedef duplicate_policy_from_projection&lt;Project, Arg&gt; type;
+  static type get_policy(const Project&amp; pr, const make_default_policy&amp;) {return type(pr);}
+};
+</pre>
+</div>
+<div class="section" id="combination-reduction">
+<h2><a class="toc-backref" href="#id13">Combination Reduction</a></h2>
+<pre class="literal-block">
+template &lt;typename Combine, typename OptIdentity = no_identity_t, typename GetKey = pair_first, typename GetValue = pair_second, typename MakeKeyval = make_pair_t&gt;
+struct combination_t;
+</pre>
+<p>Combination reduction combines values.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">Combine</tt></dt>
+<dd>The operation used to combine values.</dd>
+<dt><tt class="docutils literal">OptIdentity</tt></dt>
+<dd>Optional identity type.  If identity type is specified, it is used to stop identity values from being sent.  If this is not desired, <tt class="docutils literal">no_identity_t</tt> can be used to always send values.</dd>
+<dt><tt class="docutils literal">GetKey</tt></dt>
+<dd>The type of the function object used to extract keys from message data type.  By default, the first element of a pair is used as the key.   Note that the result of this function object must support <a class="reference external" href="www.boost.org/libs/doc/html/boost/hash.html">boost::hash</a>.</dd>
+</dl>
+<dl class="docutils">
+<dt><tt class="docutils literal">GetValue</tt></dt>
+<dd>The type of the function object used to extract values from message data type.  By default, the second element of a pair is used as the value.</dd>
+<dt><tt class="docutils literal">MakeKeyval</tt></dt>
+<dd>The type of the function object used to combine keys and values into message data.  By default, the key and value are combined into a pair.</dd>
+</dl>
+<p>Three convenience functions are provided for making combination reductions:</p>
+<pre class="literal-block">
+template &lt;typename Combine&gt;
+combination_t&lt;Combine, no_identity_t, pair_first, pair_second, make_pair_t&gt;
+combination(const Combine&amp; c);
+
+template &lt;typename Combine, typename Identity&gt;
+combination_t&lt;Combine, Identity, pair_first, pair_second, make_pair_t&gt;
+combination(const Combine&amp; c, const Identity&amp; i);
+
+template &lt;typename Combine, typename Identity, typename GetKey, typename GetValue, typename MakeKeyval&gt;
+combination_t&lt;Combine, Identity, GetKey, GetValue, MakeKeyval&gt;
+combination(const Combine&amp; c, const Identity&amp; i, const GetKey&amp; get_key, const GetValue&amp; get_value, const MakeKeyval&amp; make_keyval);
+</pre>
+<p class="rubric">Constructor</p>
+<pre class="literal-block">
+combination_t(const Combine&amp; combine, const OptIdentity&amp; opt_identity, const GetKey&amp; get_key, const GetValue&amp; get_value, const MakeKeyval&amp; make_keyval);
+</pre>
+</div>
+<div class="section" id="idempotent-combination-reduction">
+<h2><a class="toc-backref" href="#id14">Idempotent Combination Reduction</a></h2>
+<pre class="literal-block">
+template &lt;typename Combine, typename OptIdentity = no_identity_t, typename GetKey = pair_first, typename GetValue = pair_second, typename MakeKeyval = make_pair_t&gt;
+struct idempotent_combination_t;
+</pre>
+<p>Idempotent combination has an interface identical to <a class="reference external" href="#combination-reduction">combinations</a>.</p>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Jeremiah Willcock,
+Marcin Zalewski,
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2013-11-16 04:26 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

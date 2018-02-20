@@ -1,0 +1,107 @@
+Copyright 2010-2013 The Trustees of Indiana University.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met: 
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer. 
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution. 
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ Authors: Jeremiah Willcock
+          Andrew Lumsdaine
+
+AM++ documentation:
+
+What works:
+- MPI transport
+- Basic and counter message coalescing
+- Object-based addressing
+- Routing and reductions
+- Test cases
+
+What probably doesn't work:
+- GASNet and DCMF transports
+- Other types of message coalescing
+
+System requirements:
+- C++03
+- GCC atomics (see am++/detail/thread_support.hpp)
+
+Skeleton AM++ program (see test_bfs.cpp and test_bfs_threaded.cpp):
+
+  environment env = mpi_environment(argc, argv, use_threads);
+  {
+    transport trans = env.create_transport();
+    // transport is reference-counted and thus copyable (using a shallow copy)
+    // Get size and rank
+    transport::rank_type r = trans.rank(), s = trans.size();
+    // Non-coalesced message type
+    message_type<int> mt = trans.create_message_type<int>();
+    mt->set_max_count(100);
+    // Coalesced message type
+    basic_coalesced_message_type<int, my_handler> mt2(basic_coalesced_message_type_gen(100), trans);
+    mt2.set_handler(...);
+    // Object-based addressing
+    simple_generator<basic_coalesced_message_type_gen>::
+      call_result<int, my_handler, owner_map_type, no_reduction_t>::type
+      mt3(simple_generator<basic_coalesced_message_type_gen>(basic_coalesced_message_type_gen(100)),
+          trans, owner_map, no_reduction);
+    // Routing
+    routing_generator<basic_coalesced_message_type_gen, ring_routing>::
+      call_result<int, my_handler, owner_map_type, no_reduction_t>::type
+      mt4(routing_generator<basic_coalesced_message_type_gen, ring_routing>
+            (basic_coalesced_message_type_gen(100), ring_routing(trans.rank(), trans.size())),
+          trans, owner_map, no_reduction);
+
+    {
+      trans.set_nthreads(3); // Set number of threads that must enter and leave epoch
+
+      // Epoch control (explicit begin_epoch, end_epoch are deprecated)
+      {
+        scoped_epoch e(trans); // Begin epoch
+        shared_array<int> buf(new int[3]);
+        mt.message_being_built(dest); // Mark that a message is coming; only needed without coalescing, but allowed elsewhere
+        mt.send(buf.get(), 3, dest, buf /* To control lifetime */);
+        mt2.send(1);
+        mt3.send(2);
+        mt4.send(3);
+      } // End epoch
+      uintmax_t result = 0;
+      {
+        uintmax_t val;
+        scoped_epoch_value e(trans, val, result); // Begin epoch
+        mt.send(...);
+        val = 5;
+      } // End epoch, accumulating into result
+
+      // Old-style begin_epoch, end_epoch
+      trans.begin_epoch();
+      // ...
+      trans.end_epoch();
+    }
+  } // Destroy transport
+
+Hooking flush() in your own message type:
+- Look at am++/basic_coalesced_message_type.hpp
+
+Creating a custom transport wrapper that handles end_epoch differently:
+- FIXME
+
+Debugging hints:
+- Compile your program with -DDISABLE_SELF_SEND_CHECK to force coalesced
+  but non-routed messages to go through MPI, even if they are destined for
+  the current rank.  This allows some bugs to show up with one rank that
+  would otherwise require parallel debugging.

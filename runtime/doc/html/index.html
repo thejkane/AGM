@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>AM++</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/am++"><img alt="AM++" class="align-middle" src="ampp-logo.png" /></a></h1>
+<h2 class="subtitle" id="overview">Overview</h2>
+
+<!-- Copyright (C) 2009-2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<p>AM++ <a class="citation-reference" href="#willcock2010" id="id1">[Willcock2010]</a> is a user-level library for active messages based on the Active Pebbles <a class="citation-reference" href="#willcock2011" id="id2">[Willcock2011]</a> programming model.  AM++ allows message handlers to be run in
+an explicit loop that can be optimized and vectorized by the compiler and that can also be executed in parallel on multicore architectures. Runtime optimizations, such as message combining and
+filtering, are also provided by the library, removing the need to implement that functionality at the application level.</p>
+<p>The overview of concepts of AM++ can be found in the cited papers.</p>
+<p>In general, AM++ is independent of the underlying transport, but, currently, only the MPI transport is implemented.  Correspondingly, all transport-specific interfaces listed in this documentation are designed for MPI.</p>
+<ol class="arabic simple">
+<li><a class="reference external" href="tutorial.html">Tutorial</a></li>
+<li><a class="reference external" href="concepts.html">AM++ Concepts</a></li>
+<li>Reference</li>
+</ol>
+<blockquote>
+<ul class="simple">
+<li><a class="reference external" href="generators.html">Message type generators</a></li>
+<li><a class="reference external" href="reductions.html">Reductions</a></li>
+</ul>
+</blockquote>
+<p>TBD: More documentation is forthcoming.</p>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Jeremiah Willcock,
+Marcin Zalewski,
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="willcock2010" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[Willcock2010]</a></td><td><a class="reference external" href="http://dl.acm.org/citation.cfm?id=1854323">AM++: a generalized active message framework</a> by J. Willcock, T. Hoefler, N. G. Edmonds, A. Lumsdaine. Proc. 19th Int. Conference on Parallel Architectures and Compilation Techniques (PACT`10).</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="willcock2011" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[Willcock2011]</a></td><td><a class="reference external" href="http://dl.acm.org/citation.cfm?id=1995934">Active Pebbles: Parallel Programming for Data-Driven Applications</a> by J. Willcock, T. Hoefler, N. G. Edmonds, A. Lumsdaine.  Proc. Int. Conference on Supercomputing.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2013-11-16 04:26 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>

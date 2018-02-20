@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>AM++ AM++ Concepts</title>
+<link rel="stylesheet" href="rst.css" type="text/css" />
+</head>
+<body>
+<div class="document" id="logo-am-concepts">
+<h1 class="title"><a class="reference external" href="http://crest.iu.edu/research/am++"><img alt="AM++" class="align-middle" src="ampp-logo.png" /></a> AM++ Concepts</h1>
+
+<!-- Copyright (C) 2009-2013 The Trustees of Indiana University.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. -->
+<div class="section" id="architecture">
+<h1>Architecture</h1>
+<div class="figure align-right">
+<img alt="AM++ architecture" src="AM++Architecture.png" style="width: 400px;" />
+<p class="caption"><strong>Figure 1:</strong> AM++ architecture.</p>
+</div>
+<p>AM++ builds on an underlying communication layer.  The communication layer is encapsulated in a <em>transport</em>.  Multiple transports can be created.  Transports can also be cloned, creating transports with the same parameters.  Transports are designed to send messages produced by the higher-level components.  Transports provide MPI-style progress that is guaranteed only in calls to AM++.</p>
+<p>Message types are registered with a transport.  Each message type is registered with the corresponding handler.  Message types have a static and a dynamic component: the C++ type of a message type is created statically, and the dynamic components are initialized dynamically, in constructors.  Such design allows AM++ to provide type safety and reduce casting.  Message types handle buffers automatically.  A sender-provided function is called when a buffer used in sending can be reused, and the handler buffers are created and managed by AM++.</p>
+<p>Since AM++ handlers can send messages, AM++ provides <em>termination detection</em>.  Termination detection is handled in <em>epochs</em>, discussed in the next section.</p>
+<p>AM++ provides message <em>coalescing</em>, <em>reductions</em> (cache), and <em>routing</em> built on the basic message types.</p>
+<p>Message coalescing may improve performance of small messages by putting many small messages into a larger buffer, that is then sent using the underlying message type.  AM++ automatically provides a handler that calls the user-provided handler on every small message in the large coalesced buffer.  Coalescing is &quot;smart&quot; in the sense that AM++ uses heuristics to decide when to send coalesced buffers, and it may send them when they contain as little as only one small message.</p>
+<p>In some applications messages can be combined in one or another.  In AM++, this is achieved using <a class="reference external" href="reductions.html">reductions</a>.  There are 3 types of reductions supported by the AM++ <a class="reference external" href="generators.html">generators</a>:</p>
+<blockquote>
+<ul class="simple">
+<li><a class="reference external" href="reductions.html#duplicate-removal-reduction">Duplicate removal</a> should be used when sending the same message more then once does not change the result.</li>
+<li><a class="reference external" href="reductions.html#combination-reduction">Combination reduction</a> should be used when values can be combined before send, for example, using addition or multiplication.</li>
+<li><a class="reference external" href="reductions.html#idempotent-combination-reduction">Idempotent combination reduction</a> should be used when repeatedly combining with the same value does not change the result.  Max and min functions are examples of idempotent reductions.</li>
+</ul>
+</blockquote>
+<p>Finally, coalesced messages can be <em>routed</em>.  Routing is useful because coalesced messages must maintain a potentially large buffer for every destination.  With routing, the number of buffers can be reduced by adding intermediate hops.  Rook routing, for example, arranges ranks into a chessboard-like square.  To send a message to a rank in a different column than the origin rank, the message is first forwarded in the row of the chessboard, and then sent up in the column (think of a rook moving on the chessboard).  Routing can be combined with caching, providing an additional opportunity to apply reductions for messages-in-flight.</p>
+</div>
+<div class="section" id="summary-of-am-components">
+<h1>Summary of AM++ Components</h1>
+<div class="figure align-right" id="figure-2">
+<img alt="Summary of the AM++ model" src="pebble-model.png" style="width: 600px;" />
+<p class="caption"><strong>Figure 2:</strong> Summary of the AM++ model</p>
+</div>
+<p><a class="reference internal" href="#figure-2">Figure 2</a> summarizes the AM++ components.  The example is based on a hypothetical insertions into a table, where each insertion results in an AM++ message that contains the cell number and the element to insert.  There are 4 nodes, P0, P1, P2, and P3.  Each node runs a multithreaded program (represented by the white cloud at node P0).  Local messages are handled immediately with an optional self-send check, and the <tt class="docutils literal">table.insert(0, F)</tt> is handled immediately without any messages being sent.  The nodes are arranged into a hypercube, where each node can only send messages to its immediate neighbors (in this case).  Because of routing, AM++ can perform multi-source coalescing as done at node P1 with messages <tt class="docutils literal">(6, D)</tt> and <tt class="docutils literal">(6, A)</tt> reduced into the message <tt class="docutils literal">(6, D A)</tt>.  Node P3 sends two messages to the same table cell at node P1, and the messages can be reduced immediately, at node P3.  Node P2 sends two messages to node P3, to different table cells.  The messages are coalesced but not reduced (because of different destination cells).</p>
+</div>
+<div class="section" id="lifetime-of-various-components">
+<h1>Lifetime of various components.</h1>
+<div class="figure align-right">
+<img alt="AM++ architecture" src="AM++Runtime.png" style="width: 600px;" />
+<p class="caption"><strong>Figure 3:</strong> The lifetime of various AM++ components</p>
+</div>
+<p>All messages in AM++ require a transport to be sent.  Furthermore, messages must be sent in <em>epochs</em>.  To send messages, an epoch must be started on all ranks involved in a transport.  Messages are sent and received when AM++ progress occurs, which is during the calls to the AM++ interface in the current implementation.  Since message handlers can spawn further messages, an epoch enters <em>termination detection</em> when end of the epoch is requested on a given node.  Additional messages can be sent and received during termination detection.  Epoch on any node will terminate only when all messages have been sent and received on all nodes.</p>
+<p>Epochs cannot be nested.  All message types must be registered outside of epochs.  Furthermore, the lifetime of a transport must encompass all the epochs run in that transport.</p>
+<hr class="docutils" />
+<p>Copyright (C) 2009-2013 The Trustees of Indiana University.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Authors:</th><td class="field-body">Jeremiah Willcock,
+Marcin Zalewski,
+and Andrew Lumsdaine</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2013-11-16 04:26 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>
