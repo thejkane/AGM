@@ -141,6 +141,9 @@ level synchronous NUMA ordering and Dijkstra ordering at the thread level.
 ### Graph Kernels Available in AGM/EAGM Model
 The AGM/EAGM graph processing framework is implemented as part of Parallel Boost Graph Library, version 2 (PBGL2). Graph structure definitions are based on the graph structure definitions provided by the PBGL2 (Compressed Sparse Row and Adjacency List). Further, AGM/EAGM model uses 1D graph distributions.
 
+To enable parallel compilation (e.g., make -j4) every ordering is encapsulated into a separate translation unit. Therefore, you may see multiple drivers, to execute a single
+processing function.
+
 1. [Breadth First Search](https://github.com/thejkane/AGM/blob/master/boost/graph/agm/algorithms/bfs.hpp) -- With a single processing function, we can achieve multiple algorithms by changing ordering. E.g., The chaotic BFS does not perform  any ordering, but Level synchronous BFS performs ordering by the level. BFS drivers available [here.](https://github.com/thejkane/AGM/tree/master/libs/graph_parallel/drivers/eagms/bfses)
 2. [Single Source Shortest Path](https://github.com/thejkane/AGM/blob/master/boost/graph/agm/algorithms/sssp.hpp) -- Multiple algorithms can be derived by changing orderings. This includes Delta-Stepping, KLA, Bellman-Ford, Distributed-Control. SSSP drivers available [here.](https://github.com/thejkane/AGM/tree/master/libs/graph_parallel/drivers/eagms/ssspes)
 3. [Connected Components](https://github.com/thejkane/AGM/blob/master/boost/graph/agm/algorithms/cc.hpp) -- Finds connected components. CC drivers are available [here.](https://github.com/thejkane/AGM/tree/master/libs/graph_parallel/drivers/eagms/cces)
@@ -155,26 +158,32 @@ The AGM/EAGM graph processing framework is implemented as part of Parallel Boost
 In addition to AGM/EAGM graph kernels we have number of different graph kernels that does not use the AGM/EAGM model. They are as follows:
 
 + Triangle Counting (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Striped Triangle Counting
-  + Blocked Triangle Counting
-  + Traversal based Triangle Counting
+  + [Striped Triangle Counting](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/triangle_counting.hpp)
+  + [PSP-Blocked Triangle Counting](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/triangle_counting_blocked.hpp)
+  + [SPS-Blocked Triangle Counting](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/triangle_counting_sps.hpp)
+  + [SSS-Blocked Triangle Counting](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/triangle_counting_sucsuc.hpp)
+  + [Traversal based Triangle Counting](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/triangle_counting_level.hpp)
+  + Driver : [tc_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/tc_family.cpp)
 
 + Maximal Independent Set (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + FIX
-  + FIX-Bucket
-  + FIX-PQ
-  + Luby A
-  + Luby B
+  + [FIX](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/mis.hpp)
+  + [FIX-Bucket](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/mis_delta.hpp)
+  + [FIX-PQ](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/mis.hpp) -- Use "-DMIS_PRIORITY".
+  + [Luby-A](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/luby_mis.hpp)
+  + [Luby-B](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/luby_mis.hpp) -- Use SelectB template parameter for the select function.
+  + Driver : [mis_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/mis_family.cpp)
 
 + Connected Components
   + Traversal Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Priority Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Shiloach-Vishkin Connected Components (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + Driver : [cc_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/cc_family.cpp)
 
 + Breadth First Search
   + Chaotic Breadth First Search (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Level-Synchronous Breadth First Search (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + Driver : [bfs_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/bfs_family.cpp)
 
 + Single Source Shortest-Paths
   + Chaotic Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
@@ -189,8 +198,10 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Delta-Stepping Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta-Stepping Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Delta-Stepping Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-
+  + Driver : [sssp_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/sssp_family.cpp)
+  
 + PageRank (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + Driver : Application specific driver is in development. Use this [test.](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/test/europar_tests.cpp)
   
 ### Installation
 #### Pre-requisites
