@@ -8,6 +8,7 @@ Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph alg
 ## Introduction
 
 ![](https://thejkane.github.io/AGM/images/ordering-relax.jpg)
+
 Above figure shows a very high-level overview of the Abstract Graph Machine. A graph kernel in AGM is expressed as a function and an ordering. Function takes a WorkItem as an input and produces zeor or more WorkItems. The definitiion of a WorkItem can be based on vertices or edges. More concretely an AGM for a particular graph kernel is defined with the following:
 
 1. A definition of a Graph,
