@@ -231,6 +231,9 @@ E.g.,
 
 `$ ./build.sh sssp_family`
 
+### License
+See [LICENSE.txt](https://github.com/thejkane/AGM/blob/master/LICENSE_1_0.txt).
+
 ### Publications
 
 [1] Kanewala, Thejaka Amila, Marcin Zalewski, and Andrew Lumsdaine. "Families of Graph Algorithms: SSSP Case Study." European Conference on Parallel Processing. Springer, Cham, 2017.
