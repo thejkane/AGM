@@ -1,9 +1,9 @@
 # Abstract Graph Machine and Distributed, Shared-Memory Parallel Graph Kernels
 
 ### Overview
-Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ``processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains few distributed, shared-memory parallel graph kernels that does not use the AGM model. For distributed communication, implementation uses MPI and a MPI based Active Messaging framework -- AM++. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high and execution include minimum overhead.
+Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ''processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, a set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains distributed, shared-memory parallel graph kernels that do not use the AGM model. For distributed communication, implementation uses [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) and a MPI based Active Messaging framework -- AM++[9]. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high but execution includes minimum overhead.
 
-#### Authors of AGM : Thejaka Amila Kanewala, Marcin Zalewski, Andrew Lumsdaine
+#### Authors of AGM : [Thejaka Amila Kanewala](https://www.linkedin.com/in/thejaka-kanewala/), [Marcin Zalewski](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9132), [Andrew Lumsdaine](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9045), ([IU](https://www.sice.indiana.edu/all-people/profile.html?profile_id=246))
 
 ## Introduction
 
@@ -240,3 +240,5 @@ E.g.,
 Hybrid-Parallel Graph Library". In (Eds.) *International Conference
 on High Performance Computing, Student Research Symposium*, Goa,
 India.
+
+[9] Willcock, J. J., Hoefler, T., Edmonds, N. G., & Lumsdaine, A. (2010, September). AM++: A generalized active message framework. In Parallel Architectures and Compilation Techniques (PACT), 2010 19th International Conference on (pp. 401-410). IEEE.
