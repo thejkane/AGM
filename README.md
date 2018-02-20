@@ -3,11 +3,12 @@
 ### Overview
 Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ''processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, a set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains distributed, shared-memory parallel graph kernels that do not use the AGM model. For distributed communication, implementation uses [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) and a MPI based Active Messaging framework -- AM++[9]. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high but execution includes minimum overhead.
 
-#### Authors of AGM : [Thejaka Amila Kanewala](https://www.linkedin.com/in/thejaka-kanewala/), [Marcin Zalewski](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9132), [Andrew Lumsdaine](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9045), ([IU](https://www.sice.indiana.edu/all-people/profile.html?profile_id=246))
+#### Authors of AGM : [Thejaka Amila Kanewala](https://www.linkedin.com/in/thejaka-kanewala/), [Marcin Zalewski](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9132), [Andrew Lumsdaine](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9045) ([IU](https://www.sice.indiana.edu/all-people/profile.html?profile_id=246))
 
 ## Introduction
 
-Figure~XX shows a very high-level overview of the Abstract Graph Machine. A graph kernel in AGM is expressed as a function and an ordering. Function takes a WorkItem as an input and produces zeor or more WorkItems. The definitiion of a WorkItem can be based on vertices or edges. More concretely an AGM for a particular graph kernel is defined with the following:
+![](https://thejkane.github.io/AGM/images/ordering-relax.jpg)
+Above figure shows a very high-level overview of the Abstract Graph Machine. A graph kernel in AGM is expressed as a function and an ordering. Function takes a WorkItem as an input and produces zeor or more WorkItems. The definitiion of a WorkItem can be based on vertices or edges. More concretely an AGM for a particular graph kernel is defined with the following:
 
 1. A definition of a Graph,
 2. A definition of a WorkItem,
