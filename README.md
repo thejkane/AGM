@@ -130,6 +130,10 @@ bfs_eagm_t bfsalgo(rtmodelgen,
 ...
 ```
 
+An example execution of an EAGM is shown in the below figure. For the following
+example, EAGM perform chaotic global ordering, node level Delta-Stepping,
+level synchronous NUMA ordering and Dijkstra ordering at the thread level.
+
 ![](https://thejkane.github.io/AGM/images/eagm-node-numa-delta-thread.jpg)
 
 ### Graph Kernels Available in AGM/EAGM Model
