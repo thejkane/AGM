@@ -1,7 +1,7 @@
 # Abstract Graph Machine and Distributed, Shared-Memory Parallel Graph Kernels
 
 ### Overview
-Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ''processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, a set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains distributed, shared-memory parallel graph kernels that do not use the AGM model. For distributed communication, implementation uses [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) and a MPI based Active Messaging framework -- AM++[9]. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high but execution includes minimum overhead.
+Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph algorithms. The AGM model expresses a graph algorithm as a function (AKA ''processing function'') and an ordering ([strict weak ordering relation](https://en.wikipedia.org/wiki/Weak_ordering)). This repository contains an implementation of the AGM model, a set of graph kernels implemented using the AGM model. In addition to AGM graph kernels, repository also, contains distributed, shared-memory parallel graph kernels that do not use the AGM model. For distributed communication, the implementation uses [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface) and an MPI based Active Messaging framework -- AM++[9]. All implementations are in C++ and we make use of heavy template meta-programming, therefore, compilation times are quite high but execution includes minimum overhead.
 
 #### Authors of AGM : [Thejaka Amila Kanewala](https://www.linkedin.com/in/thejaka-kanewala/), [Marcin Zalewski](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9132), [Andrew Lumsdaine](https://www.pnnl.gov/science/staff/staff_info.asp?staff_num=9045) ([IU](https://www.sice.indiana.edu/all-people/profile.html?profile_id=246))
 
@@ -9,7 +9,7 @@ Abstract Graph Machine (AGM) models orderings in asynchronous parallel graph alg
 
 ![](https://thejkane.github.io/AGM/images/ordering-relax.png)
 
-Above figure shows a very high-level overview of the Abstract Graph Machine. A graph kernel in AGM is expressed as a function and an ordering. Function takes a WorkItem as an input and produces zeor or more WorkItems. The definitiion of a WorkItem can be based on vertices or edges. More concretely an AGM for a particular graph kernel is defined with the following:
+Above figure shows a very high-level overview of the Abstract Graph Machine. A graph kernel in AGM is expressed as a function and an ordering. The processing function takes a WorkItem as an input and produces zero or more WorkItems. The definition of a WorkItem can be based on vertices or edges. More concretely an AGM for a particular graph kernel is defined with the following:
 
 1. A definition of a Graph,
 2. A definition of a WorkItem,
@@ -102,11 +102,11 @@ bfs_agm_t bfsalgo(pf,
 time_type elapsed = bfsalgo(initial, runtime_params);
 ```
 
-More detials of the abstract model can be found in [1], [2], [3].
+More detials of the abstract model can be found in [1], [4], [5].
 
 ### Extended Abstract Graph Machine (EAGM)
 
-The extended AGM explores spatial and temporal ordering and derives less synchronous distributed, shared-memory parallel graph algorithms than AGM algorithms. For the EAGM orderings can be peformed at global memory level, node memory level, NUMA memory or at the thread memory level. A description of EAGM achieves spatial and temporal ordering is shown in Figure~YY.
+The extended AGM explores spatial and temporal ordering and derives less synchronous distributed, shared-memory parallel graph algorithms. The EAGM orderings can be peformed at global memory level, node memory level, [NUMA](https://en.wikipedia.org/wiki/Non-uniform_memory_access) memory level or at the thread memory level. 
 
 For extended AGM we pass a configuration that defines ordering for each memory level. E.g.,
 ```cpp
@@ -133,7 +133,7 @@ bfs_eagm_t bfsalgo(rtmodelgen,
 ```
 
 An example execution of an EAGM is shown in the below figure. For the following
-example, EAGM perform chaotic global ordering, node level Delta-Stepping,
+example, EAGM performs chaotic global ordering, node level Delta-Stepping,
 level synchronous NUMA ordering and Dijkstra ordering at the thread level.
 
 ![](https://thejkane.github.io/AGM/images/eagm-node-numa-delta-thread.jpg)
