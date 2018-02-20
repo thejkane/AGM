@@ -174,40 +174,40 @@ In addition to AGM/EAGM graph kernels we have number of different graph kernels 
   + Driver : [mis_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/mis_family.cpp)
 
 + Connected Components
-  + Traversal Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Priority Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Delta Based Connected Components (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Shiloach-Vishkin Connected Components (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + [Traversal Based Connected Components](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/cc_chaotic.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Priority Connected Components](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/cc_dc.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Delta Based Connected Components](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/delta_stepping_cc.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Shiloach-Vishkin Connected Components](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/connected_components.hpp) (Authors : Nicholas Edmonds, Andrew Lumsdaine)
   + Driver : [cc_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/cc_family.cpp)
 
 + Breadth First Search
-  + Chaotic Breadth First Search (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Level-Synchronous Breadth First Search (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + [Chaotic Breadth First Search](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/bfs_chaotic.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Level-Synchronous Breadth First Search](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/breadth_first_search.hpp) (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
   + Driver : [bfs_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/bfs_family.cpp)
 
 + Single Source Shortest-Paths
-  + Chaotic Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Chaotic Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Chaotic Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Chaotic Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + KLA Single Source Shortest-Paths (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + KLA Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + KLA Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + KLA Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Delta-Stepping Shortes Paths (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
-  + Delta-Stepping Single Source Shortest-Paths with thread level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Delta-Stepping Single Source Shortest-Paths with node level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
-  + Delta-Stepping Single Source Shortest-Paths with NUMA level ordering (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Chaotic Single Source Shortest-Paths](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/distributed_control_chaotic.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Chaotic Single Source Shortest-Paths with thread level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/distributed_control.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Chaotic Single Source Shortest-Paths with node level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/distributed_control_node.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Chaotic Single Source Shortest-Paths with NUMA level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/distributed_control_node.hpp) -- Set numa=true in the constructor (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [KLA Single Source Shortest-Paths](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/kla_sssp_buffer.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [KLA Single Source Shortest-Paths with thread level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/kla_sssp_thread.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [KLA Single Source Shortest-Paths with node level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/kla_sssp_node.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [KLA Single Source Shortest-Paths with NUMA level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/kla_sssp_numa.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Delta-Stepping Shortes Paths](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/delta_stepping_shortest_paths.hpp) (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
+  + [Delta-Stepping Single Source Shortest-Paths with thread level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/delta_stepping_shortest_paths_thread.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Delta-Stepping Single Source Shortest-Paths with node level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/delta_stepping_shortest_paths_node.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
+  + [Delta-Stepping Single Source Shortest-Paths with NUMA level ordering](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/delta_stepping_shortest_paths_numa.hpp) (Authors : Thejaka Amila Kanewala, Andrew Lumsdaine)
   + Driver : [sssp_family](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/drivers/sssp_family.cpp)
   
-+ PageRank (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
++ [PageRank](https://github.com/thejkane/AGM/blob/master/boost/graph/distributed/page_rank.hpp) (Authors : Nicholas Edmonds, Douglas Gregor, Andrew Lumsdaine)
   + Driver : Application specific driver is in development. Use this [test.](https://github.com/thejkane/AGM/blob/master/libs/graph_parallel/test/europar_tests.cpp)
   
 ### Installation
 #### Pre-requisites
-+ MPI implementations (e.g., OpenMPI or CrayMPICH)
-+ Boost (Thoroughly tested with 1.55)
-+ LibCDS (Thoroughly tested with 2.1.0)
++ MPI implementations (e.g., [OpenMPI](https://www.open-mpi.org/) or [MPICH](https://www.mpich.org/))
++ [Boost](http://www.boost.org/) (Thoroughly tested with 1.55)
++ [LibCDS](http://libcds.sourceforge.net/) (Thoroughly tested with 2.1.0)
 
 Make sure Boost and LibCDS are compiled with the proper compiler wrappers.
 
@@ -222,7 +222,7 @@ Configure AM++ (inside runtime folder) as follows:
 #### AGM/EAGM and Other Graph Kernels
 
 You can use CMake to build everything but it will take considerable amount of time. Therefore,
-it is advisable to build only the kernels you need. These kernals are localted in TODO.
+it is advisable to build only the kernels you need. 
 To build only the required kernels, you can use build.sh file. Set BOOST_INSTALL, AMPP_INSTALL and LIBCDS_INSTALL to appropriated paths and build the kernel as follows:
 
 `$ ./build.sh <kernel>`
