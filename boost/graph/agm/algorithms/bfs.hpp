@@ -77,14 +77,8 @@ class bfs_family {
 		    buckets& outset) {
       
       Vertex v = std::get<0>(wi);
-
-      std::cout << "============================================================" << std::endl;
-      info("vertex : " , v);
       int level = std::get<1>(wi);
       int old_level = vlevel[v], last_old_level;
-
-      info("new level : ", level);
-      debug("old level : " , old_level);
       
       while(level < old_level) {
         last_old_level = old_level;
