@@ -59,7 +59,7 @@ public:
                T2 _no,
                T3 _nuo,
                T4 _to,
-	       bool _forward_scheduler=true) : global_ord(_go),
+	       bool _forward_scheduler=false) : global_ord(_go),
 					       node_ord(_no),
 					       numa_ord(_nuo),
 					       thread_ord(_to),

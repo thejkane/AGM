@@ -75,6 +75,7 @@ private:
 	      << ", COALESCING : " << runtimeparams.coalescing
 	      << ", FLOW CONTROL : " << runtimeparams.flow_control
 	      << ", FLUSH : " << runtimeparams.flush
+	      << ", PULL COUNT : " << runtimeparams.pull_count
 	      << ", REDUCTION ENABLED : " << runtimeparams.enable_reductions
 	      << ", REDUCTION_CACHE : " << runtimeparams.reduction_cache
 	      << ", SELF_SEND_DISABLE : " << self_send_disable

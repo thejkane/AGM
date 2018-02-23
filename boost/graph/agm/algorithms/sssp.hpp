@@ -96,7 +96,9 @@ class sssp_family {
       Vertex v = std::get<0>(w);
       Distance d = std::get<1>(w);
 
-      if (vdistance[v] == d) {
+      Distance vd;
+      __atomic_load(&vdistance[v], &vd, __ATOMIC_SEQ_CST);
+      if (vd == d) {
         BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
           Vertex u = boost::target(e, g);
           Distance we = boost::get(vweight, e);

@@ -55,15 +55,51 @@ class bfs_family {
   // destination, level
   typedef std::tuple<Vertex, Level> WorkItem;
 
-  // the processing function  
+  //===================================================================================
+  // Pair of processing functions : post order pf and pre-order pf
+  //===================================================================================
+  // the post-order processing function  
   template<typename State>
-  struct bfs_pf {
-
+  struct post_order_bfs_pf {
   public:
-    bfs_pf(const Graph& _rg, State& _st, agm_work_stats& _sr) : g(_rg),
+    post_order_bfs_pf(const Graph& _rg, State& _st, agm_work_stats& _sr) : g(_rg),
 						       vlevel(_st),
 						       stats(_sr){}
+  private:
+    const Graph& g;
+    State& vlevel;
+    agm_work_stats& stats;
 
+  public:
+
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+      
+      Vertex v = std::get<0>(wi);
+      int level = std::get<1>(wi);
+
+      if (level == vlevel[v]) {
+        BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+          Vertex u = boost::target(e, g);
+          WorkItem generated(u, (level+1));
+          outset.push(generated, tid);
+        }        
+      }
+    }
+  };
+      
+
+  template<typename State>
+  struct preorder_bfs_pf {
+    
+  public:
+    preorder_bfs_pf(const Graph& _rg,
+                    State& _st,
+                    agm_work_stats& _sr) : g(_rg),
+                                           vlevel(_st),
+                                           stats(_sr){}
   private:
     const Graph& g;
     State& vlevel;
@@ -79,7 +115,56 @@ class bfs_family {
       Vertex v = std::get<0>(wi);
       int level = std::get<1>(wi);
       int old_level = vlevel[v], last_old_level;
+
+      while(level < old_level) {
+        last_old_level = old_level;
+        old_level = boost::parallel::val_compare_and_swap(&vlevel[v], old_level, level);
+
+        if (last_old_level == old_level) {
+          
+#ifdef PBGL2_PRINT_WORK_STATS        
+          if (old_level < INT_MAX) {
+            stats.increment_invalidated(tid);
+          } else
+            stats.increment_useful(tid);            
+#endif
+          outset.push(wi, tid);          
+          return;
+        }
+      }
       
+#ifdef PBGL2_PRINT_WORK_STATS                
+      stats.increment_rejected(tid);
+#endif      
+    }
+  };
+
+  
+  
+  // the processing function  
+  template<typename State>
+  struct bfs_pf {
+
+  public:
+    bfs_pf(const Graph& _rg, State& _st, agm_work_stats& _sr) : g(_rg),
+						       vlevel(_st),
+						       stats(_sr){}
+  private:
+    const Graph& g;
+    State& vlevel;
+    agm_work_stats& stats;
+
+  public:
+
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+      
+      Vertex v = std::get<0>(wi);
+      int level = std::get<1>(wi);
+      int old_level = vlevel[v], last_old_level;
+
       while(level < old_level) {
         last_old_level = old_level;
         old_level = boost::parallel::val_compare_and_swap(&vlevel[v], old_level, level);
@@ -97,7 +182,6 @@ class bfs_family {
             Vertex u = boost::target(e, g);
             WorkItem generated(u, (level+1));
             outset.push(generated, tid);
-            debug("pushing to outset : ", u);
           }
 
           return;
@@ -154,11 +238,162 @@ public:
   }
 
 
+private:  
   template<typename RuntimeModelGen,
-           typename EAGMConfig>
+           typename EAGMConfig,
+           typename LevelState>
+  time_type execute_split_pf(const Graph& g,
+                             RuntimeModelGen rtmodelgen,
+                             EAGMConfig& config,
+                             WorkItem sw,
+                             LevelState vlevel,
+                             instance_params& runtime_params,
+                             agm_work_stats& sr, 
+                             bool _verify=true) {
+    // Initial work item set
+    typedef append_buffer<WorkItem, 10u> InitialWorkItems;
+    InitialWorkItems initial;
+    auto s = std::get<0>(sw);
+    if (get(get(vertex_owner, g), s) == _RANK) {      
+      vlevel[s] = 0;
+      initial.push_back(sw);
+      
+#ifdef PBGL2_PRINT_WORK_STATS        
+      sr.increment_useful(0);            
+#endif      
+    }
+
+    typedef preorder_bfs_pf<LevelState> ProcessingFunction;
+    ProcessingFunction pf(g, vlevel, sr);
+
+    typedef post_order_bfs_pf<LevelState> PostOrderProcessingFunction;
+    PostOrderProcessingFunction sendpf(g, vlevel, sr);
+
+    // BFS algorithm
+    typedef eagm<Graph,
+                 WorkItem,
+                 ProcessingFunction,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 PostOrderProcessingFunction> bfs_eagm_t;
+
+    bfs_eagm_t bfsalgo(rtmodelgen,
+                       config,
+                       pf,
+                       sendpf,
+                       initial);
+    
+    info("Invoking BFS algorithm with split processing functions ...");
+    time_type elapsed = bfsalgo(runtime_params);
+
+#ifdef PBGL2_PRINT_WORK_STATS
+    bfsalgo.print_stats();
+#endif    
+    
+    return elapsed;            
+  }  
+
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+           typename LevelState>
+  time_type execute_pre_order_pf(const Graph& g,
+                                 RuntimeModelGen rtmodelgen,
+                                 EAGMConfig& config,
+                                 WorkItem sw,
+                                 LevelState vlevel,
+                                 instance_params& runtime_params,
+                                 agm_work_stats& sr, 
+                                 bool _verify=true) {
+    // Initial work item set
+    typedef append_buffer<WorkItem, 10u> InitialWorkItems;
+    InitialWorkItems initial;
+    auto s = std::get<0>(sw);
+    if (get(get(vertex_owner, g), s) == _RANK) {      
+      initial.push_back(sw);
+    }
+
+    typedef bfs_pf<LevelState> ProcessingFunction;
+    ProcessingFunction pf(g, vlevel, sr);
+
+    // BFS algorithm
+    typedef eagm<Graph,
+                 WorkItem,
+                 ProcessingFunction,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 EMPTY_PF> bfs_eagm_t;
+
+    bfs_eagm_t bfsalgo(rtmodelgen,
+                       config,
+                       pf,
+                       initial);
+    
+    info("Invoking BFS algorithm with pre-order processing function ...");
+    time_type elapsed = bfsalgo(runtime_params);
+
+#ifdef PBGL2_PRINT_WORK_STATS
+    bfsalgo.print_stats();
+#endif    
+    
+    return elapsed;            
+  }  
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+           typename LevelState>
+  time_type execute_post_order_pf(const Graph& g,
+                                  RuntimeModelGen rtmodelgen,
+                                  EAGMConfig& config,
+                                  WorkItem sw,
+                                  LevelState vlevel,
+                                  instance_params& runtime_params,
+                                  agm_work_stats& sr, 
+                                  bool _verify=true) {
+    // Initial work item set
+    typedef append_buffer<WorkItem, 10u> InitialWorkItems;
+    InitialWorkItems initial;
+    auto s = std::get<0>(sw);
+    if (get(get(vertex_owner, g), s) == _RANK) {      
+      initial.push_back(sw);
+    }
+
+    typedef bfs_pf<LevelState> ProcessingFunction;
+    ProcessingFunction pf(g, vlevel, sr);
+
+    // BFS algorithm
+    typedef eagm<Graph,
+                 WorkItem,
+                 EMPTY_PF,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 ProcessingFunction> bfs_eagm_t;
+
+    bfs_eagm_t bfsalgo(rtmodelgen,
+                       config,
+                       pf,
+                       initial);
+    
+    info("Invoking BFS algorithm with post-order processing function ...");
+    time_type elapsed = bfsalgo(runtime_params);
+
+#ifdef PBGL2_PRINT_WORK_STATS
+    bfsalgo.print_stats();
+#endif    
+    
+    return elapsed;            
+  }  
+  
+  
+public:
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+           typename agm_param_type>
   time_type execute_eagm(const Graph& g,
                          RuntimeModelGen rtmodelgen,
                          EAGMConfig& config,
+                         agm_param_type& agm_params,
+                         Vertex source,
                          instance_params& runtime_params,
                          agm_work_stats& sr, 
                          bool _verify=true) {
@@ -171,34 +406,46 @@ public:
     DistMap distance_state(distmap.begin(), get(boost::vertex_index, g));
 
     // source
-    Vertex source = 2;
-
-    info("Setting the initial work item set ...");
-    // Initial work item set
-    std::vector<WorkItem> initial;
-    initial.push_back(WorkItem(source, 0));
-
-    info("Setting the processing function ...");
-    // Processing funcion
-    typedef bfs_pf<DistMap> ProcessingFunction;
-    ProcessingFunction pf(g, distance_state, sr);
-    
-    // BFS algorithm
-    typedef eagm<Graph,
-                 WorkItem,
-                 ProcessingFunction,
-                 EAGMConfig,
-                 RuntimeModelGen> bfs_eagm_t;
-
-    bfs_eagm_t bfsalgo(rtmodelgen,
-                       config,
-                       pf,
-                       initial);
-
+    WorkItem sw(source, 0);
     
     info("Invoking BFS algorithm ...");
-    time_type elapsed = bfsalgo(runtime_params);
+    time_type elapsed = -1;
 
+    if (agm_params.pf_mode == agm_pf_splitted) {
+      elapsed = execute_split_pf(g,
+                                 rtmodelgen,
+                                 config,
+                                 sw,
+                                 distance_state,                                 
+                                 runtime_params,
+                                 sr,
+                                 _verify);
+    } else if (agm_params.pf_mode == agm_pf_preorder) {
+      elapsed = execute_pre_order_pf(g,
+                                     rtmodelgen,
+                                     config,
+                                     sw,
+                                     distance_state,                                 
+                                     runtime_params,
+                                     sr,
+                                     _verify);
+      
+    } else if (agm_params.pf_mode == agm_pf_postorder) {
+      elapsed = execute_post_order_pf(g,
+                                      rtmodelgen,
+                                      config,
+                                      sw,
+                                      distance_state,                                 
+                                      runtime_params,
+                                      sr,
+                                      _verify);
+      
+    } else {
+      error("Invalid processing function invocation mode!");
+      assert(false);
+    }
+    
+    
     if (_verify) {
       verify(g, source, distance_state);
     }

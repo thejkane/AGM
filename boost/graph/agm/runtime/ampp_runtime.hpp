@@ -133,6 +133,7 @@ private:
   MPI_Datatype dt;
   owner_map& owner;  
   int core_offset;
+  unsigned int pull_count;
   RelaxMessage relax_msg;  
   runtime_stats& stats;
   post_order_processing_function& post_pf;
@@ -186,6 +187,7 @@ public:
     dt(amplusplus::get_mpi_datatype(amplusplus::detail::get_type_info<work_item>())),
     owner(_rgen.owner),
     core_offset(_rgen.core_offset),
+    pull_count(_rgen.rtparams.pull_count),
     relax_msg(_rgen.msg_gen,
               transport,
               work_item_owner<owner_map, work_item>(owner),
@@ -331,7 +333,9 @@ public:
   }
 
   void pull_work(int tid) {
-    // TODO
+    for(int i=0; i < pull_count; ++i) {
+      transport.get_scheduler().run_one();
+    }
   }
   
   void synchronize(){

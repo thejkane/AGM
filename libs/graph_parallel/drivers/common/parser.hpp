@@ -52,6 +52,7 @@ public:
   unsigned int recv_depth;
   routing_type routing;
   unsigned int flow_control;
+  unsigned int pull_count;
 
   instance_params(int threads,
 		  int iterations,
@@ -64,18 +65,20 @@ public:
 		  unsigned int eager,
 		  unsigned int recv,
 		  routing_type rt,
-		  unsigned int fc) : threads(threads),
-				     iterations(iterations),
-				     warm_up_iterations(warm),
-				     enable_reductions(redenabled),
-				     reduction_cache(cache),
-				     coalescing(coal),
-				     poll_tasks(polls),
-				     flush(flush),
-				     eager(eager),
+		  unsigned int fc,
+		  unsigned int plc) : threads(threads),
+				      iterations(iterations),
+				      warm_up_iterations(warm),
+				      enable_reductions(redenabled),
+				      reduction_cache(cache),
+				      coalescing(coal),
+				      poll_tasks(polls),
+				      flush(flush),
+    eager(eager),
     recv_depth(recv),
     routing(rt),
-    flow_control(fc)
+    flow_control(fc),
+    pull_count(plc)
   {}
 
 };
@@ -95,6 +98,7 @@ private:
   std::vector<unsigned int> flush_freq = {20};
   std::vector<unsigned int> eager_limit = {3};
   std::vector<unsigned int> recv_depth = {0};//disable
+  std::vector<unsigned int> pull_counts = {1};
   std::vector<routing_type> routing = {rt_none};
   unsigned int flow_control = 10;
   unsigned int reentry_count = 0;
@@ -141,6 +145,7 @@ public:
       std::cout << "Eager Limits = " << print_list(eager_limit) << std::endl;
       std::cout << "Receive Depths = " << print_list(recv_depth) << std::endl;
       std::cout << "Routing = " << print_list(routing) << std::endl;
+      std::cout << "Pull counts = " << print_list(pull_counts) << std::endl;
       std::cout << "Flow Controls = " << flow_control << std::endl;
       std::cout << "Reentry Counts = " << reentry_count << std::endl;
       std::cout << "=================================================================" << std::endl;
@@ -161,6 +166,10 @@ public:
 
       if (arg == "--iterations") {
 	iterations = boost::lexical_cast<weight_type>( argv[i+1] );
+      }
+
+      if (arg == "--pull-count") {
+	pull_counts = extract_params<unsigned int>( argv[i+1] );
       }
 
       if (arg == "--warm-up-iterations") {
@@ -241,40 +250,44 @@ public:
 	BOOST_FOREACH(size_t coalescing, coalescing_size) {
 	  BOOST_FOREACH(unsigned int polls, number_poll_task) {
 	    BOOST_FOREACH(unsigned int flush, flush_freq) {
-	      BOOST_FOREACH(unsigned int eager, eager_limit) {
-		BOOST_FOREACH(unsigned int recv, recv_depth) {
-		  if (enable_reductions) {
-		    BOOST_FOREACH(size_t reduction, reduction_cache_size) {
+	      BOOST_FOREACH(unsigned int pull_count, pull_counts) {
+		BOOST_FOREACH(unsigned int eager, eager_limit) {
+		  BOOST_FOREACH(unsigned int recv, recv_depth) {
+		    if (enable_reductions) {
+		      BOOST_FOREACH(size_t reduction, reduction_cache_size) {
+			instance_params ip(thread,
+					   iterations,
+					   warm_up_iterations,
+					   enable_reductions,
+					   reduction,
+					   coalescing,
+					   polls,
+					   flush,
+					   eager,
+					   recv,
+					   rt,
+					   flow_control,
+					   pull_count);
+
+			runtime_params.push_back(ip);
+		      }
+		    } else {
 		      instance_params ip(thread,
 					 iterations,
 					 warm_up_iterations,
 					 enable_reductions,
-					 reduction,
+					 0,
 					 coalescing,
 					 polls,
 					 flush,
 					 eager,
 					 recv,
 					 rt,
-					 flow_control);
+					 flow_control,
+					 pull_count);
 
 		      runtime_params.push_back(ip);
 		    }
-		  } else {
-		    instance_params ip(thread,
-				       iterations,
-				       warm_up_iterations,
-				       enable_reductions,
-				       0,
-				       coalescing,
-				       polls,
-				       flush,
-				       eager,
-				       recv,
-				       rt,
-				       flow_control);
-
-		    runtime_params.push_back(ip);
 		  }
 		}
 	      }

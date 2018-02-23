@@ -122,7 +122,9 @@ public:
       // current bucket. We now know all threads
       // have done processing the current bucket, therefore,
       // we switch to the next bucket
+      //    fprintf(stderr, "4A:%d:%d\n", tid, _RANK);      
       rt.wait_for_threads_to_reach_here(tid);
+      //fprintf(stderr, "4B:%d:%d\n", tid, _RANK);      
       if (rt.is_main_thread(tid)) {
         // move to next bucket
 	if (forward)
@@ -136,13 +138,20 @@ public:
       }
       // To make sure that no other thread, will
       // start processing before main thread switch buckets
+      //    fprintf(stderr, "5A:%d:%d\n", tid, _RANK);      
       rt.wait_for_threads_to_reach_here(tid);
+      //    fprintf(stderr, "5B:%d:%d\n", tid, _RANK);      
     }
 
+    //    fprintf(stderr, "6A:%d:%d\n", tid, _RANK);      
     rt.wait_for_threads_to_reach_here(tid);    
+    //    fprintf(stderr, "6B:%d:%d\n", tid, _RANK);      
     if (rt.is_main_thread(tid))
       current_bucket = all_buckets.begin();
+
+    //    fprintf(stderr, "7A:%d:%d\n", tid, _RANK);      
     rt.wait_for_threads_to_reach_here(tid);
+    //    fprintf(stderr, "7B:%d:%d\n", tid, _RANK);      
   }
 
   void numa_process(int tid) {

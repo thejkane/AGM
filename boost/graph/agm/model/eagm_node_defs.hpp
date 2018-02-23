@@ -391,9 +391,15 @@ public:
 
     // Need to make sure all threads have the same
     // current_bucket_end value. We need both barriers.
+    //    fprintf(stderr, "3A:%d:%d\n", tid, _RANK);      
     this->rt.wait_for_threads_to_reach_here(tid);
+    //    fprintf(stderr, "3B:%d:%d\n", tid, _RANK);      
+
     current_bucket_end = buffer->size();
+
+    //    fprintf(stderr, "4A:%d:%d\n", tid, _RANK);      
     this->rt.wait_for_threads_to_reach_here(tid);
+    //    fprintf(stderr, "4B:%d:%d\n", tid, _RANK);      
     
     while(current_bucket_start != current_bucket_end) {
       for (typename Bucket::size_type i = current_bucket_start + tid ;
@@ -402,13 +408,23 @@ public:
         this->rt.send(wi, tid);
       }
 
+      this->rt.pull_work(tid);
+
+      // pull more work
+      //fprintf(stderr, "[bp]");
+      //fprintf(stderr, "[ap]");
       //fprintf(stderr, "spinning in B\n");      
+      //      fprintf(stderr, "1A:%d:%d\n", tid, _RANK);      
       this->rt.wait_for_threads_to_reach_here(tid);
-      if (tid == 0)
+      //      fprintf(stderr, "1B:%d:%d\n", tid, _RANK);      
+      if (tid == 0) {
 	current_bucket_start = current_bucket_end;      
+      }
 
       current_bucket_end = buffer->size();
+      //      fprintf(stderr, "2A:%d:%d\n", tid, _RANK);      
       this->rt.wait_for_threads_to_reach_here(tid);
+      //      fprintf(stderr, "2B:%d:%d\n", tid, _RANK);      
 
 #ifdef ENABLE_INTERMEDIATE_CLEARING      
       // by here we know that all threads have the
