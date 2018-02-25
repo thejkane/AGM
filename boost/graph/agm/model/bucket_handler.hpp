@@ -78,7 +78,7 @@ public:
 
   void receive(const work_item& wi) {
     //    std::cout << "Invoking processing function ..................." << std::endl;
-    const int tid = amplusplus::detail::get_thread_id();        
+    const int tid = runtime.get_calling_thread_id();        
     pf(wi, tid, buckets);
   }
   

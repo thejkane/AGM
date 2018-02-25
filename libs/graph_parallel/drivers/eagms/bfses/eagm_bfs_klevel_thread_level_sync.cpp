@@ -27,7 +27,9 @@
 //  Authors: Thejaka Kanewala
 //           Andrew Lumsdaine
 
-class AGMBFSKLevelSyncExecutor {
+#include "eagm_bfs_base.hpp"
+
+class AGMBFSKLevelSyncExecutor : public AGMBFSExecutor {
 
 public:
   template <typename Graph, typename MessageGenerator,
@@ -48,8 +50,13 @@ public:
                                                         ch,
                                                         ch,
                                                         level);
-
-
+    return execute_bfs_eagm(g,
+                            config,
+                            trans,
+                            msg_gen,
+                            gparams,
+                            runtime_params,
+                            agm_params);
     
   }
 };

@@ -223,6 +223,10 @@ public:
     }
   }
 
+  int get_calling_thread_id() {
+    return amplusplus::detail::get_thread_id();
+  }
+
   void initialize_per_thread(int tid) {
     if (pin(tid+core_offset) != 0) {
       std::cerr << "[ERROR] Unable to pin current thread to "

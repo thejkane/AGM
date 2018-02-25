@@ -212,6 +212,8 @@ public:
                                              agm_params.verify);
     
     agm_params.work_stats.reduce_stats(exec_time);
+    trans.set_nthreads(1);
+    clear_thread_core_data();
     return exec_time;    
   }
 };
