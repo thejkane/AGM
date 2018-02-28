@@ -70,7 +70,8 @@ class eagm {
   // Machine model
   typedef typename RuntimeModelGen::template inner<WorkItem,
                                                    ReceiverHandler,
-                                                   PostOrderProcessingFunction>::type RuntimeModel;
+                                                   PostOrderProcessingFunction,
+                                                   EAGMConfig>::type RuntimeModel;
   // Bucket Handler
   typedef bucket_handler<EAGMConfig, RuntimeModel, PreOrderProcessingFunction> BucketHandler;
   // Initial Workitem Set

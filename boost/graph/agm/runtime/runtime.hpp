@@ -93,28 +93,14 @@ public:
 
 class runtime_base {
 protected:
-  std::atomic<uint64_t> active_count;
   int threads;
   int numa_domains;
   int ranks;  
 
 public:
-  runtime_base(int _threads, int _numa, int _ranks):active_count(0),
-                                                    threads(_threads),
+  runtime_base(int _threads, int _numa, int _ranks):threads(_threads),
                                                     numa_domains(_numa),
                                                     ranks(_ranks){}
-
-  inline void increase_activity_count(int tid, uint64_t v) {
-    active_count.fetch_add(v);
-  }
-  
-  inline void decrease_activity_count(int tid, uint64_t v) {
-    active_count.fetch_sub(v);
-  }
-
-  inline uint64_t get_activity_count() {
-    return active_count.load();
-  }
 
   int get_nnuma_nodes() {
     return numa_domains;

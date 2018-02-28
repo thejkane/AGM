@@ -312,6 +312,28 @@ public:
     }
   }
 
+
+  void process_globaly_unordered_buckets(int tid, uint64_t count) {
+    //debug("inside process_chaotic_global_bucket");
+    amplusplus::transport& t = rt.get_transport();
+    t.begin_epoch();
+    if (rt.is_main_thread(tid))
+      t.increase_activity_count(count);
+
+    rt.wait_for_threads_to_reach_here(tid); 
+
+    // unfortunately we have to depend on the AM++ interface
+    // here. This needs to be modified at the AM++ level.
+    amplusplus::transport::end_epoch_request req = t.i_end_epoch();
+    rt.set_end_epoch_request(tid, &req);
+    
+    while(true) {
+      (*current_bucket)->process(tid);
+      if (req.test())
+        break;
+    }
+  }  
+
   void process_current_bucket(int tid) {    
     unsigned long all_starting_sizes = 0;
     do {

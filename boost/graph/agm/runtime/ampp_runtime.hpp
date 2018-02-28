@@ -52,6 +52,7 @@ namespace boost { namespace graph { namespace agm {
 template<typename work_item,
          typename receive_handler,         
          typename post_order_processing_function,
+         typename eagm_config_t,
          typename owner_map,
          typename message_generator,
          typename ampp_runtime_gen>
@@ -83,11 +84,13 @@ public:
   
   template <typename WorkItem,
             typename ReceiveHandler,
-            typename PostOrderProcessingFunction>
+            typename PostOrderProcessingFunction,
+            typename EAGMConfig>
   struct inner {
     typedef ampp_runtime<WorkItem,
                          ReceiveHandler,
                          PostOrderProcessingFunction,
+                         EAGMConfig,
                          OwnerMap,
                          MessageGenerator,
                          ampp_runtime_gen<MessageGenerator,
@@ -111,6 +114,7 @@ public:
 template<typename work_item,
          typename receive_handler,         
          typename post_order_processing_function,
+         typename eagm_config_t,
          typename owner_map,
          typename message_generator,
          typename ampp_runtime_gen>
@@ -118,6 +122,7 @@ class ampp_runtime : public runtime_base {
 
 public:  
   typedef work_item work_item_t;
+  typedef typename eagm_config_t::global_ordering_t global_ordering_t;
   
   typedef typename message_generator::template call_result<work_item, 
                                                            receive_handler,
@@ -129,6 +134,7 @@ public:
   
 private:
   int dummy;
+  std::atomic<uint64_t> active_count;  
   amplusplus::transport& transport;
   MPI_Datatype dt;
   owner_map& owner;  
@@ -139,6 +145,7 @@ private:
   post_order_processing_function& post_pf;
   OutSenderType out_set;
   boost::shared_ptr<amplusplus::detail::barrier> t_bar;
+  std::vector<amplusplus::transport::end_epoch_request*> end_epoch_requests;
   std::vector<int> thread_numa_map; // maps thread id to numa domain
   std::vector<int> numa_thread_indexes; // finds the thread index within a numa domain
   std::vector<int> numa_main_thread_map; // maps numa domain to its main thread
@@ -149,6 +156,8 @@ private:
   void initialize() {
     // initialize the thread barrier
     t_bar.reset(new amplusplus::detail::barrier(this->threads));
+    end_epoch_requests.resize(this->threads, NULL);
+    
     numa_init();
   }
 
@@ -183,6 +192,7 @@ public:
                  1,
                  _rgen.transport.size()),
     dummy((amplusplus::register_mpi_datatype<work_item>(), 0)),
+    active_count(0),
     transport(_rgen.transport),
     dt(amplusplus::get_mpi_datatype(amplusplus::detail::get_type_info<work_item>())),
     owner(_rgen.owner),
@@ -332,14 +342,78 @@ public:
     transport.end_epoch();
   }
 
+  void set_end_epoch_request(int tid,
+                             amplusplus::transport::end_epoch_request* req) {
+    end_epoch_requests[tid] = req; 
+  }
+  
+  inline void increase_activity_count(int tid,
+                                      uint64_t v,
+                                      CHAOTIC_ORDERING_T) {
+    transport.increase_activity_count(v);
+  }
+  
+  inline void decrease_activity_count(int tid,
+                                      uint64_t v,
+                                      CHAOTIC_ORDERING_T) {
+    transport.decrease_activity_count(v);
+  }
+
+  template<typename T>
+  inline void increase_activity_count(int tid, uint64_t v, T t) {
+    active_count.fetch_add(v);
+  }
+
+  template<typename T>
+  inline void decrease_activity_count(int tid, uint64_t v, T t) {
+    active_count.fetch_sub(v);
+  }
+
+  inline uint64_t get_activity_count() {
+    return active_count.load();
+  }
+  
+  inline void increase_activity_count(int tid,
+                                      uint64_t v) {
+    global_ordering_t t;
+    increase_activity_count(tid, v, t);
+  }
+  
+  inline void decrease_activity_count(int tid,
+                                      uint64_t v) {
+    global_ordering_t t;
+    decrease_activity_count(tid, v, t);
+  }
+  
+  
+  amplusplus::transport& get_transport() {
+    return transport;
+  }
+  
   unsigned long end_epoch_with_value(const unsigned long& _read_value) {
     return transport.end_epoch_with_value(_read_value);
   }
 
-  void pull_work(int tid) {
+
+  template<typename T>
+  bool pull_work(int tid, T) {
+    return true; // terminated indication
+  }
+
+  bool pull_work(int tid, CHAOTIC_ORDERING_T) {
+    assert(end_epoch_requests[tid] != NULL);
     for(int i=0; i < pull_count; ++i) {
-      transport.get_scheduler().run_one();
+      if (end_epoch_requests[tid]->test()) {
+        return true;
+      }
     }
+
+    return false;
+  }  
+  
+  bool pull_work(int tid) {
+    global_ordering_t t;
+    return pull_work(tid, t);
   }
   
   void synchronize(){

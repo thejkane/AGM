@@ -74,6 +74,7 @@ public:
                                 pf(_pf),
                                 initial(_initial),
                                 runtime(_rt),
+                                should_break(false),
                                 buckets(configs, runtime) {}
 
   void receive(const work_item& wi) {
@@ -99,11 +100,60 @@ public:
     return elapsed_time;
   }
 
+  // Globally ordered execution
+  template<typename GT1>
+  void run(int tid, GT1) {
+    
+    if (runtime.is_main_thread(tid)) {
+      initial.clear();
+    }
+    runtime.wait_for_threads_to_reach_here(tid);
+
+    // execution starts
+    time_type start = get_time();    
+    buckets.process_global_buckets(tid);
+    time_type end = get_time();
+    
+    elapsed_time = (end-start);
+  }
+
+
+  // Globally not ordered execution
+  void run(int tid, CHAOTIC_ORDERING_T) {
+
+    uint64_t count = initial.size();
+
+    if (runtime.is_main_thread(tid)) {
+      initial.clear();
+    }
+    runtime.wait_for_threads_to_reach_here(tid);
+
+    if (tid == 0) {
+      if (buckets.synchronize_current_bucket()) {
+        all_rank_error("Nothing to process for global chaotic EAGM.");
+        should_break = true;
+      }
+    }
+
+    runtime.wait_for_threads_to_reach_here(tid);
+
+    if (should_break)
+      return;
+    
+    // execution starts
+    time_type start = get_time();    
+    buckets.process_globaly_unordered_buckets(tid, count);
+    time_type end = get_time();
+    
+    elapsed_time = (end-start);
+  }
+  
+  
   template<typename T1,
            typename T2,
            typename T3,
            typename T4>
-  void run(int tid, T1, T2, T3, T4) {
+  void run(int tid, T1 t1, T2, T3, T4) {
 
     runtime.initialize_per_thread(tid);
 
@@ -116,20 +166,9 @@ public:
       //pf(wi, tid, buckets);
       buckets.push(wi, tid);
     }
-    
+
     runtime.synchronize();
-
-    if (runtime.is_main_thread(tid)) {
-      initial.clear();
-    }
-    runtime.wait_for_threads_to_reach_here(tid);
-
-    // execution starts
-    time_type start = get_time();    
-    buckets.process_global_buckets(tid);
-    time_type end = get_time();
-    
-    elapsed_time = (end-start);    
+    run(tid, t1);
   }
 
 
@@ -174,6 +213,7 @@ private:
   ProcessingFunction& pf;
   InitialWorkItems& initial;  
   Runtime& runtime;
+  bool should_break;
   all_buckets_t buckets;
   time_type elapsed_time;  
 };

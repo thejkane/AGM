@@ -141,13 +141,19 @@ public:
   }
 
   void process(int tid) {
-    while(!thread_buckets[tid]->empty()) {
-      // TODO object copying, but tricky since we need to
-      // pop also
-      work_item wi = thread_buckets[tid]->top();
-      thread_buckets[tid]->pop();      
-      this->rt.send(wi, tid);
 
+    while(true) {
+      while(!thread_buckets[tid]->empty()) {
+	// TODO object copying, but tricky since we need to
+	// pop also
+	work_item wi = thread_buckets[tid]->top();
+	thread_buckets[tid]->pop();      
+	this->rt.send(wi, tid);
+      }
+
+      this->rt.pull_work(tid);
+      if(this->rt.pull_work(tid))
+	break;
     }
   }
 
@@ -374,7 +380,9 @@ public:
                                                         current_level_trait>(_rep,
                                                                              _config,
                                                                              _rt),
-					 current_bucket_start(0){
+					 current_bucket_start(0),
+					 last_thread_passed(false),
+					 passed_count(0){
     boost::shared_ptr<Bucket> p(new Bucket);
     buffer.swap(p);
   }
@@ -408,23 +416,31 @@ public:
         this->rt.send(wi, tid);
       }
 
-      this->rt.pull_work(tid);
-
+      bool terminated = false;
       // pull more work
-      //fprintf(stderr, "[bp]");
-      //fprintf(stderr, "[ap]");
-      //fprintf(stderr, "spinning in B\n");      
-      //      fprintf(stderr, "1A:%d:%d\n", tid, _RANK);      
+      while(!last_thread_passed) {
+	terminated = this->rt.pull_work(tid);
+	if (__atomic_add_fetch(&passed_count,
+			       1,
+			       __ATOMIC_SEQ_CST) == nthreads) {
+	  last_thread_passed = true;
+	}
+      }
+
+      //fprintf(stderr, "here:%d", passed_count);
+      //if (terminated)
+      //return;
+
       this->rt.wait_for_threads_to_reach_here(tid);
-      //      fprintf(stderr, "1B:%d:%d\n", tid, _RANK);      
       if (tid == 0) {
+	last_thread_passed = false;
+	passed_count = 0;
 	current_bucket_start = current_bucket_end;      
       }
 
       current_bucket_end = buffer->size();
-      //      fprintf(stderr, "2A:%d:%d\n", tid, _RANK);      
       this->rt.wait_for_threads_to_reach_here(tid);
-      //      fprintf(stderr, "2B:%d:%d\n", tid, _RANK);      
+
 
 #ifdef ENABLE_INTERMEDIATE_CLEARING      
       // by here we know that all threads have the
@@ -471,6 +487,8 @@ public:
 private:
   boost::shared_ptr<Bucket> buffer;
   typename Bucket::size_type current_bucket_start;
+  bool last_thread_passed;
+  int passed_count;
 };
 
 // A bucket node that stores an append buffer for a numa domain
@@ -522,17 +540,22 @@ public:
         this->rt.send(wi, tid);
       }
 
+      // pull more work
+      this->rt.pull_work(tid);
+
       this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
       current_bucket_start = current_bucket_end;
       current_bucket_end = buffer->size();
       this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
-      
+
+#ifdef ENABLE_INTERMEDIATE_CLEARING            
       if (current_bucket_start == current_bucket_end) {
         if (this->rt.is_main_thread_in_numa_domain(tid)) {
           buffer->clear();
         }
       }
       this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
+#endif
     }
   }
 
