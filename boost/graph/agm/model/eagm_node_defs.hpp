@@ -142,6 +142,7 @@ public:
 
   void process(int tid) {
 
+    int flush_frequency = 0;
     while(true) {
       while(!thread_buckets[tid]->empty()) {
 	// TODO object copying, but tricky since we need to
@@ -149,9 +150,14 @@ public:
 	work_item wi = thread_buckets[tid]->top();
 	thread_buckets[tid]->pop();      
 	this->rt.send(wi, tid);
+
+	++flush_frequency;
+	if (flush_frequency == this->rt.get_flush_frequency()) {
+	  flush_frequency = 0;
+	  this->rt.pull_work(tid);
+	}
       }
 
-      this->rt.pull_work(tid);
       if(this->rt.pull_work(tid))
 	break;
     }
@@ -408,23 +414,34 @@ public:
     //    fprintf(stderr, "4A:%d:%d\n", tid, _RANK);      
     this->rt.wait_for_threads_to_reach_here(tid);
     //    fprintf(stderr, "4B:%d:%d\n", tid, _RANK);      
-    
+
+    int flush_frequency = 0;    
+
     while(current_bucket_start != current_bucket_end) {
       for (typename Bucket::size_type i = current_bucket_start + tid ;
            i < current_bucket_end ; i+= nthreads) {
         work_item& wi = (*buffer)[i];
         this->rt.send(wi, tid);
+
+	++flush_frequency;
+	if (flush_frequency == this->rt.get_flush_frequency()) {
+	  flush_frequency = 0;
+	  this->rt.pull_work(tid);
+	}
       }
 
       bool terminated = false;
+      bool checked = false;
       // pull more work
       while(!last_thread_passed) {
-	terminated = this->rt.pull_work(tid);
-	if (__atomic_add_fetch(&passed_count,
-			       1,
-			       __ATOMIC_SEQ_CST) == nthreads) {
+	terminated = this->rt.pull_work(tid, checked);
+	if (!checked && (__atomic_add_fetch(&passed_count,
+                                            1,
+                                            __ATOMIC_SEQ_CST) == nthreads)) {
 	  last_thread_passed = true;
 	}
+
+        checked = true;
       }
 
       //fprintf(stderr, "here:%d", passed_count);

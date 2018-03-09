@@ -83,10 +83,18 @@ class bfs_family {
       if (level == vlevel[v]) {
         BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
           Vertex u = boost::target(e, g);
+#ifdef PBGL2_PRINT_WORK_STATS
+          stats.increment_edges(tid);
+#endif                    
           WorkItem generated(u, (level+1));
           outset.push(generated, tid);
         }        
       }
+#ifdef PBGL2_PRINT_WORK_STATS
+      else {
+        stats.increment_invalidated_cancels(tid);
+      }
+#endif                      
     }
   };
       
@@ -180,6 +188,9 @@ class bfs_family {
 #endif
           BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
             Vertex u = boost::target(e, g);
+#ifdef PBGL2_PRINT_WORK_STATS
+          stats.increment_edges(tid);
+#endif                      
             WorkItem generated(u, (level+1));
             outset.push(generated, tid);
           }

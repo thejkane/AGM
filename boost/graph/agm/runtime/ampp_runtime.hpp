@@ -140,6 +140,7 @@ private:
   owner_map& owner;  
   int core_offset;
   unsigned int pull_count;
+  unsigned int flush_frequency;
   RelaxMessage relax_msg;  
   runtime_stats& stats;
   post_order_processing_function& post_pf;
@@ -198,6 +199,7 @@ public:
     owner(_rgen.owner),
     core_offset(_rgen.core_offset),
     pull_count(_rgen.rtparams.pull_count),
+    flush_frequency(_rgen.rtparams.flush),
     relax_msg(_rgen.msg_gen,
               transport,
               work_item_owner<owner_map, work_item>(owner),
@@ -231,6 +233,10 @@ public:
     for(int i=0; i < numa_thread_indexes.size(); ++i) {
       info("Thread id : ", i, ", Index within NUMA : ", numa_thread_indexes[i]);
     }
+  }
+
+  unsigned int get_flush_frequency() {
+    return flush_frequency;
   }
 
   int get_calling_thread_id() {
@@ -396,12 +402,16 @@ public:
 
 
   template<typename T>
-  bool pull_work(int tid, T) {
+  bool pull_work(int tid, T, bool checked) {
     return true; // terminated indication
   }
 
-  bool pull_work(int tid, CHAOTIC_ORDERING_T) {
+  bool pull_work(int tid, CHAOTIC_ORDERING_T, bool checked) {
     assert(end_epoch_requests[tid] != NULL);
+    if (checked) {
+      return end_epoch_requests[tid]->test();
+    }
+      
     for(int i=0; i < pull_count; ++i) {
       if (end_epoch_requests[tid]->test()) {
         return true;
@@ -411,9 +421,9 @@ public:
     return false;
   }  
   
-  bool pull_work(int tid) {
+  bool pull_work(int tid, bool checked=false) {
     global_ordering_t t;
-    return pull_work(tid, t);
+    return pull_work(tid, t, checked);
   }
   
   void synchronize(){
