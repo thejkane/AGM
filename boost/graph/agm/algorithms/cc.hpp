@@ -42,6 +42,8 @@
 #include <boost/graph/agm/runtime/runtime.hpp>
 #include <boost/graph/agm/model/general_orderings.hpp>
 
+#include <limits>
+
 namespace boost { namespace graph { namespace agm {
       
 // definition of the CC work item set
@@ -54,10 +56,12 @@ class cc_family {
   typedef typename boost::graph_traits < Graph >::vertex_descriptor Vertex;
   typedef Vertex Component;
 
+#define MAX_COMPONENT std::numeric_limits<Component>::max();
   // work item set definition
   // Every work item must have the time
   // destination, level
   typedef std::tuple<Vertex, Component> WorkItem;
+  typedef std::tuple<Vertex, Component, Level> LevelWorkItem;
    
   // the processing function  
   template<typename State>
@@ -89,11 +93,11 @@ class cc_family {
     void operator()(const WorkItem& wi,
                     int tid,
 		    buckets& outset) {
-      
+
       Vertex v = std::get<0>(wi);
-      int component = std::get<1>(wi);
-      int old_component = vcomponent[v], last_old_component;
-      
+      Component component = std::get<1>(wi);
+      Component old_component = vcomponent[v], last_old_component;
+
       while(component < old_component) {
         last_old_component = old_component;
         old_component = boost::parallel::val_compare_and_swap(&vcomponent[v], old_component, component);
@@ -135,6 +139,250 @@ class cc_family {
 #ifdef PBGL2_PRINT_WORK_STATS                
       stats.increment_rejected(tid);
 #endif      
+    }
+
+
+    template<typename buckets>
+    void operator()(const LevelWorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+
+      Vertex v = std::get<0>(wi);
+      Component component = std::get<1>(wi);
+      Component old_component = vcomponent[v], last_old_component;
+      Level l = std::get<2>(wi);
+
+      while(component < old_component) {
+        last_old_component = old_component;
+        old_component = boost::parallel::val_compare_and_swap(&vcomponent[v], old_component, component);
+
+        if (last_old_component == old_component) {
+          
+#ifdef PBGL2_PRINT_WORK_STATS        
+          if (old_component < logical_id(v)) {
+            stats.increment_invalidated(tid);
+          } else
+            stats.increment_useful(tid);            
+
+#endif
+          std::set<Vertex> adjacencies;
+          bool haslowernbr = false;
+          BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+            Vertex u = boost::target(e, g);
+            if (logical_id(u) > component) { // ignore self-loops
+              adjacencies.insert(u);
+            } else if(logical_id(u) < component) {
+              // v has a neighbor that is lower than v_component. Therefore, stop the search from v_component
+              haslowernbr = true;
+              break;
+            }
+          }
+
+          if (!haslowernbr) {
+            typename std::set<Vertex>::iterator ite = adjacencies.begin();
+            for(; ite != adjacencies.end(); ++ite) {
+              LevelWorkItem generated((*ite), component, (l+1));
+              outset.push(generated, tid);              
+            }
+          }
+
+          return;
+        }
+      }
+      
+#ifdef PBGL2_PRINT_WORK_STATS                
+      stats.increment_rejected(tid);
+#endif      
+    }
+
+
+
+  };
+
+
+  template<typename State>
+  struct pre_order_cc_pf {
+
+  public:
+    pre_order_cc_pf(const Graph& _rg,
+		   State& _st,
+		   IdDistribution& _idd,
+		   agm_work_stats& _sr) : g(_rg),
+                                 vcomponent(_st),
+                                 id_distribution(_idd),
+                                 stats(_sr){}
+
+  private:
+    const Graph& g;
+    State& vcomponent;
+    IdDistribution& id_distribution;
+    agm_work_stats& stats;
+
+    template<typename SizeType>
+    SizeType logical_id(SizeType k) {
+      return id_distribution(k);
+    }
+    
+    
+  public:
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+
+      Vertex v = std::get<0>(wi);
+      Component component = std::get<1>(wi);
+      Component old_component = vcomponent[v], last_old_component;
+
+      while(component < old_component) {
+        last_old_component = old_component;
+        old_component = boost::parallel::val_compare_and_swap(&vcomponent[v], old_component, component);
+
+        if (last_old_component == old_component) {
+          
+#ifdef PBGL2_PRINT_WORK_STATS        
+          if (old_component < logical_id(v)) {
+            stats.increment_invalidated(tid);
+          } else
+            stats.increment_useful(tid);            
+
+#endif
+          outset.push(wi, tid);          
+          return;
+        }
+      }
+      
+#ifdef PBGL2_PRINT_WORK_STATS                
+      stats.increment_rejected(tid);
+#endif      
+    }
+
+    template<typename buckets>
+    void operator()(const LevelWorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+
+      Vertex v = std::get<0>(wi);
+      Component component = std::get<1>(wi);
+      Component old_component = vcomponent[v], last_old_component;
+
+      while(component < old_component) {
+        last_old_component = old_component;
+        old_component = boost::parallel::val_compare_and_swap(&vcomponent[v], old_component, component);
+
+        if (last_old_component == old_component) {
+          
+#ifdef PBGL2_PRINT_WORK_STATS        
+          if (old_component < logical_id(v)) {
+            stats.increment_invalidated(tid);
+          } else
+            stats.increment_useful(tid);            
+
+#endif
+          outset.push(wi, tid);          
+          return;
+        }
+      }
+      
+#ifdef PBGL2_PRINT_WORK_STATS                
+      stats.increment_rejected(tid);
+#endif      
+    }
+  };
+
+
+  template<typename State>
+  struct post_order_cc_pf {
+
+  public:
+    post_order_cc_pf(const Graph& _rg,
+		   State& _st,
+		   IdDistribution& _idd,
+		   agm_work_stats& _sr) : g(_rg),
+                                 vcomponent(_st),
+                                 id_distribution(_idd),
+                                 stats(_sr){}
+
+  private:
+    const Graph& g;
+    State& vcomponent;
+    IdDistribution& id_distribution;
+    agm_work_stats& stats;
+
+    template<typename SizeType>
+    SizeType logical_id(SizeType k) {
+      return id_distribution(k);
+    }
+    
+    
+  public:
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+
+      Vertex v = std::get<0>(wi);
+      Component component = std::get<1>(wi);
+      Component old_component;
+      __atomic_load(&vcomponent[v], &old_component, __ATOMIC_SEQ_CST);
+
+      if (old_component == component) {
+	std::set<Vertex> adjacencies;
+	bool haslowernbr = false;
+	BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+	  Vertex u = boost::target(e, g);
+	  if (logical_id(u) > component) { // ignore self-loops
+	    adjacencies.insert(u);
+	  } else if(logical_id(u) < component) {
+	    // v has a neighbor that is lower than v_component. Therefore, stop the search from v_component
+	    haslowernbr = true;
+	    break;
+	  }
+	}
+
+	if (!haslowernbr) {
+	  typename std::set<Vertex>::iterator ite = adjacencies.begin();
+	  for(; ite != adjacencies.end(); ++ite) {
+	    WorkItem generated((*ite), component);
+	    outset.push(generated, tid);              
+	  }
+	}
+      }
+    }
+
+    template<typename buckets>
+    void operator()(const LevelWorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+
+      Vertex v = std::get<0>(wi);
+      Component component = std::get<1>(wi);
+      Component old_component;
+      Level l = std::get<2>(wi);
+      __atomic_load(&vcomponent[v], &old_component, __ATOMIC_SEQ_CST);
+
+      if (old_component == component) {
+	std::set<Vertex> adjacencies;
+	bool haslowernbr = false;
+	BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+	  Vertex u = boost::target(e, g);
+	  if (logical_id(u) > component) { // ignore self-loops
+	    adjacencies.insert(u);
+	  } else if(logical_id(u) < component) {
+	    // v has a neighbor that is lower than v_component. Therefore, stop the search from v_component
+	    haslowernbr = true;
+	    break;
+	  }
+	}
+
+	if (!haslowernbr) {
+	  typename std::set<Vertex>::iterator ite = adjacencies.begin();
+	  for(; ite != adjacencies.end(); ++ite) {
+	    LevelWorkItem generated((*ite), component, (l+1));
+	    outset.push(generated, tid);              
+	  }
+	}
+      }
     }
   };
 
@@ -178,13 +426,16 @@ public:
   }
 
 
-  template<typename append_buffer_t>
+  template<typename component_state,
+	   typename append_buffer_t,
+	   typename work_item_t>
   struct threaded_initializer {
   private:
     int nthreads;
     Graph& graph;
     IdDistribution& idd;
     append_buffer_t* buffer;
+    component_state& state;
 
     template<typename SizeType>
     SizeType logical_id(SizeType k) {
@@ -195,12 +446,24 @@ public:
     threaded_initializer(int _nthreads,
                          Graph& _g,
                          IdDistribution& _idd,
-                         append_buffer_t* _buf) : nthreads(_nthreads),
-                                                  graph(_g),
-                                                  idd(_idd),
-                                                  buffer(_buf) {}
-    
-    void operator()(int tid) {
+                         append_buffer_t* _buf,
+			 component_state& _st) : nthreads(_nthreads),
+						 graph(_g),
+						 idd(_idd),
+						 buffer(_buf),
+						 state(_st){}
+
+    work_item_t create_wi(WorkItem w, Vertex v, Component comp) {
+      WorkItem w2(v, comp);
+      return w2;
+    }
+
+    work_item_t create_wi(LevelWorkItem w, Vertex v, Component comp) {
+      LevelWorkItem w2(v, comp, 0);
+      return w2;
+    }
+
+    void operator()(int tid, pf_exec_mode_preorder) {
 
       BGL_PARFORALL_VERTICES_T(u, graph, Graph, tid, nthreads) {
         Vertex min_neighbor = logical_id(u);
@@ -223,16 +486,242 @@ public:
           for (typename std::set<Vertex>::iterator ite = adjacencies.begin();
                ite != adjacencies.end(); ++ite) {
             assert(comp < logical_id(*ite));
-            buffer->push_back(WorkItem((*ite), comp));
+	    work_item_t w;
+            buffer->push_back(create_wi(w, (*ite), comp));
           }
+        }
+      }
+    }
+
+    void operator()(int tid, pf_exec_mode_postorder) {
+
+      BGL_PARFORALL_VERTICES_T(u, graph, Graph, tid, nthreads) {
+        Vertex min_neighbor = logical_id(u);
+        std::set<Vertex> adjacencies;
+        BGL_FORALL_OUTEDGES_T(u, e, graph, Graph) {
+          Vertex v = target(e, graph);
+          if (u != v) { // ignore self loops
+            if (adjacencies.insert(v).second) {
+              // check whether u is the minimum out of its neighbors
+              if (logical_id(v) < min_neighbor) {
+                min_neighbor = logical_id(v);
+                break;
+              }
+            }
+          }
+        }
+
+        if (min_neighbor == logical_id(u)) {
+          auto comp = logical_id(u);
+	  work_item_t w;
+	  buffer->push_back(create_wi(w, u, comp));
+	  state[u] = MAX_COMPONENT;
+        }
+      }
+    }
+
+    void operator()(int tid, pf_exec_mode_splitorder) {
+
+      BGL_PARFORALL_VERTICES_T(u, graph, Graph, tid, nthreads) {
+        Vertex min_neighbor = logical_id(u);
+        std::set<Vertex> adjacencies;
+        BGL_FORALL_OUTEDGES_T(u, e, graph, Graph) {
+          Vertex v = target(e, graph);
+          if (u != v) { // ignore self loops
+            if (adjacencies.insert(v).second) {
+              // check whether u is the minimum out of its neighbors
+              if (logical_id(v) < min_neighbor) {
+                min_neighbor = logical_id(v);
+                break;
+              }
+            }
+          }
+        }
+
+        if (min_neighbor == logical_id(u)) {
+          auto comp = logical_id(u);
+	  work_item_t w;
+	  buffer->push_back(create_wi(w, u, comp));
         }
       }
     }
   };
   
-  
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+	   typename ComponentMap,
+	   typename work_item_t,
+	   typename InitialWorkItemSet>
+  time_type execute(Graph& g,
+		    RuntimeModelGen rtmodelgen,
+		    EAGMConfig& config,
+		    ComponentMap& component_state,
+		    InitialWorkItemSet& initial,
+		    pf_exec_mode_preorder mode,
+		    instance_params& runtime_params,
+		    agm_work_stats& sr,
+		    IdDistribution& iddist) {
+
+    //BGL_FORALL_VERTICES_T(v, g, Graph) { 
+    //  put(component_state, v, iddist(v));
+    //}
+
+    info("Setting the processing function ...");
+    // Processing funcion
+    typedef cc_pf<ComponentMap> ProcessingFunction;
+    ProcessingFunction pf(g, component_state, iddist, sr);
+    
+    // CC algorithm
+    typedef eagm<Graph,
+                 work_item_t,
+                 ProcessingFunction,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 EMPTY_PF> cc_eagm_t;
+
+    cc_eagm_t ccalgo(rtmodelgen,
+                     config,
+                     pf,
+                     initial);
+
+    
+    info("Invoking CC algorithm with : ", config.get_pf_mode(mode));
+    return ccalgo(runtime_params);
+  }
+
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+	   typename ComponentMap,
+	   typename work_item_t,
+	   typename InitialWorkItemSet>
+  time_type execute(Graph& g,
+		    RuntimeModelGen rtmodelgen,
+		    EAGMConfig& config,
+		    ComponentMap& component_state,
+		    InitialWorkItemSet& initial,
+		    pf_exec_mode_splitorder mode,
+		    instance_params& runtime_params,
+		    agm_work_stats& sr,
+		    IdDistribution& iddist) {
+
+    //BGL_FORALL_VERTICES_T(v, g, Graph) { 
+    //  put(component_state, v, iddist(v));
+    //}
+
+    info("Setting the processing function ...");
+    // Pre-Order Processing funcion
+    typedef pre_order_cc_pf<ComponentMap> PreOrderProcessingFunction;
+    PreOrderProcessingFunction prepf(g, component_state, iddist, sr);
+
+    // Post-Order Processing funcion
+    typedef post_order_cc_pf<ComponentMap> PostOrderProcessingFunction;
+    PostOrderProcessingFunction postpf(g, component_state, iddist, sr);
+    
+    // CC algorithm
+    typedef eagm<Graph,
+                 work_item_t,
+                 PreOrderProcessingFunction,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 PostOrderProcessingFunction> cc_eagm_t;
+
+    cc_eagm_t ccalgo(rtmodelgen,
+                     config,
+                     prepf,
+		     postpf,
+                     initial);
+    
+    info("Invoking CC algorithm with : ", config.get_pf_mode(mode));
+    return ccalgo(runtime_params);
+  }
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+	   typename ComponentMap,
+	   typename work_item_t,
+	   typename InitialWorkItemSet>
+  time_type execute(Graph& g,
+		    RuntimeModelGen rtmodelgen,
+		    EAGMConfig& config,
+		    ComponentMap& component_state,
+		    InitialWorkItemSet& initial,
+		    pf_exec_mode_postorder mode,
+		    instance_params& runtime_params,
+		    agm_work_stats& sr,
+		    IdDistribution& iddist) {
+
+    //BGL_FORALL_VERTICES_T(v, g, Graph) { 
+    //  put(component_state, v, iddist(v));
+    //}
+
+    info("Setting the processing function ...");
+    // Processing funcion
+    typedef cc_pf<ComponentMap> ProcessingFunction;
+    ProcessingFunction pf(g, component_state, iddist, sr);
+    
+    // CC algorithm
+    typedef eagm<Graph,
+                 work_item_t,
+                 EMPTY_PF,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 ProcessingFunction> cc_eagm_t;
+
+    cc_eagm_t ccalgo(rtmodelgen,
+                     config,
+                     pf,
+                     initial);
+
+    
+    info("Invoking CC algorithm with : ", config.get_pf_mode(mode));
+    return ccalgo(runtime_params);
+  }
+
+
   template<typename RuntimeModelGen,
            typename EAGMConfig>
+  time_type execute_plain_eagm(Graph& g,
+			       RuntimeModelGen rtmodelgen,
+			       EAGMConfig& config,
+			       instance_params& runtime_params,
+			       agm_work_stats& sr,
+			       IdDistribution& iddist,
+			       bool _verify=true) {
+    return execute_eagm<RuntimeModelGen, EAGMConfig, WorkItem>
+      (g,
+       rtmodelgen,
+       config,
+       runtime_params,
+       sr,
+       iddist,
+       _verify);
+  }
+
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig>
+  time_type execute_w_level_eagm(Graph& g,
+				 RuntimeModelGen rtmodelgen,
+				 EAGMConfig& config,
+				 instance_params& runtime_params,
+				 agm_work_stats& sr,
+				 IdDistribution& iddist,
+				 bool _verify=true) {
+    return execute_eagm<RuntimeModelGen, EAGMConfig, LevelWorkItem>
+      (g,
+       rtmodelgen,
+       config,
+       runtime_params,
+       sr,
+       iddist,
+       _verify);
+  }
+  
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+	   typename work_item_t>
   time_type execute_eagm(Graph& g,
                          RuntimeModelGen rtmodelgen,
                          EAGMConfig& config,
@@ -247,49 +736,48 @@ public:
     std::vector<Component> componentmap(num_vertices(g), std::numeric_limits<Component>::max());
     typedef boost::iterator_property_map<typename std::vector<Component>::iterator, VertexIndexMap> ComponentMap;
     ComponentMap component_state(componentmap.begin(), get(boost::vertex_index, g));
-    
+
     BGL_FORALL_VERTICES_T(v, g, Graph) { 
       put(component_state, v, iddist(v));
     }
 
+    typedef typename EAGMConfig::pf_exec_mode_t mode_t;
+    mode_t mode;
+    
     info("Setting the initial work item set ...");
     // Initial work item set
     int nthreads = runtime_params.threads;
-    typedef append_buffer<WorkItem, 10u> InitialBuffer;
+    typedef append_buffer<work_item_t, 10u> InitialBuffer;
     InitialBuffer initial;
-    threaded_initializer<InitialBuffer> initializer(nthreads, g, iddist, &initial); 
+    threaded_initializer<ComponentMap, InitialBuffer, work_item_t> initializer(nthreads, g, 
+								  iddist, 
+								  &initial,
+								  component_state); 
     boost::scoped_array<boost::thread> threads(new boost::thread[nthreads - 1]);
     for (int i = 0; i < nthreads - 1; ++i) {
-      boost::thread thr(boost::ref(initializer), i + 1);
+      boost::thread thr(boost::ref(initializer), i + 1, mode);
       threads[i].swap(thr);
     }
 	  
-    initializer(0);
+    initializer(0, mode);
     
     for (int i = 0; i < (nthreads - 1); ++i)
       threads[i].join();
 
 
-    info("Setting the processing function ...");
-    // Processing funcion
-    typedef cc_pf<ComponentMap> ProcessingFunction;
-    ProcessingFunction pf(g, component_state, iddist, sr);
-    
-    // CC algorithm
-    typedef eagm<Graph,
-                 WorkItem,
-                 ProcessingFunction,
-                 EAGMConfig,
-                 RuntimeModelGen> cc_eagm_t;
-
-    cc_eagm_t ccalgo(rtmodelgen,
-                     config,
-                     pf,
-                     initial);
-
-    
-    info("Invoking CC algorithm ...");
-    time_type elapsed = ccalgo(runtime_params);
+    time_type elapsed = execute<RuntimeModelGen,
+				EAGMConfig,
+				ComponentMap,
+				work_item_t,
+				InitialBuffer>(g,
+					       rtmodelgen,
+					       config,
+					       component_state,
+					       initial,
+					       mode,
+					       runtime_params,
+					       sr,
+					       iddist);
 
     if (_verify) {
       verify(g, component_state);

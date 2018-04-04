@@ -38,8 +38,21 @@
 #include <boost/parallel/append_buffer.hpp>
 
 namespace boost { namespace graph { namespace agm {
-      
 
+template<typename runtime_t>      
+struct all_chaotic_bucket {
+private:
+  runtime_t& rt;
+
+public:
+  all_chaotic_bucket(runtime_t& _rt) : rt(_rt){}
+
+  template<typename work_item>
+  void push(const work_item& wi, int tid) {
+    rt.send_no_activity(wi, tid);
+  }
+};
+      
 template<typename EAGMConfig,
          typename Runtime,
          typename ProcessingFunction>
@@ -64,6 +77,8 @@ class bucket_handler {
                                           typename eagm_traits_t::root_level_bucket_trait>
   all_buckets_t;
 
+  typedef all_chaotic_bucket<Runtime> all_chaotic_bucket_t;
+
   typedef append_buffer<work_item, 10u> InitialWorkItems;
   
 public:
@@ -75,13 +90,37 @@ public:
                                 initial(_initial),
                                 runtime(_rt),
                                 should_break(false),
-                                buckets(configs, runtime) {}
+                                buckets(configs, runtime),
+                                chaotic_buckets(runtime) {}
 
   void receive(const work_item& wi) {
-    //    std::cout << "Invoking processing function ..................." << std::endl;
-    const int tid = runtime.get_calling_thread_id();        
-    pf(wi, tid, buckets);
+    const int tid = runtime.get_calling_thread_id();
+
+    typename EAGMConfig::global_ordering_t go;
+    typename EAGMConfig::node_ordering_t no;
+    typename EAGMConfig::numa_ordering_t nuo;
+    typename EAGMConfig::thread_ordering_t to;
+    
+    receive(wi, tid, go, no, nuo, to);
   }
+
+  template<typename T1,
+           typename T2,
+           typename T3,
+           typename T4>
+  void receive(const work_item& wi, int tid, T1, T2, T3, T4) {
+    pf(wi, tid, buckets);    
+  }  
+
+
+  void receive(const work_item& wi,
+               int tid,
+               CHAOTIC_ORDERING_T,
+               CHAOTIC_ORDERING_T,
+               CHAOTIC_ORDERING_T,
+               CHAOTIC_ORDERING_T) {
+    pf(wi, tid, chaotic_buckets);        
+  }  
   
   void operator()(int tid) {
     typename EAGMConfig::global_ordering_t go;
@@ -101,8 +140,9 @@ public:
   }
 
   // Globally ordered execution
-  template<typename GT1>
-  void run(int tid, GT1) {
+  void run(int tid) {
+
+    runtime.synchronize();    
     
     if (runtime.is_main_thread(tid)) {
       initial.clear();
@@ -119,14 +159,36 @@ public:
 
 
   // Globally not ordered execution
-  void run(int tid, CHAOTIC_ORDERING_T) {
+  template<typename GT4>
+  void run(int tid, 
+	   CHAOTIC_ORDERING_T,
+	   CHAOTIC_ORDERING_T,
+	   CHAOTIC_ORDERING_T,
+	   GT4) {
+
+
+    runtime.initialize_per_thread(tid);
+
+    runtime.synchronize();
+
+    if ((_RANK == 0) && (tid == 0)) {
+      info("Initial set size : " , initial.size());
+    }
+
+    for (typename InitialWorkItems::size_type i = tid ;
+         i < initial.size(); i+= runtime.get_nthreads()) {
+      //      debug("pushing initial workitems");
+      work_item& wi = initial[i];
+      //pf(wi, tid, buckets);
+      buckets.push_initial(wi, tid);
+    }
 
     uint64_t count = initial.size();
 
-    if (runtime.is_main_thread(tid)) {
+    /*if (runtime.is_main_thread(tid)) {
       initial.clear();
     }
-    runtime.wait_for_threads_to_reach_here(tid);
+    runtime.wait_for_threads_to_reach_here(tid);*/
 
     if (tid == 0) {
       if (buckets.synchronize_current_bucket()) {
@@ -159,16 +221,19 @@ public:
 
     runtime.synchronize();
 
-    for (typename InitialWorkItems::size_type i = tid ;
-         i < initial.size(); i+= runtime.get_nthreads()) {
-      debug("pushing initial workitems");
-      work_item& wi = initial[i];
-      //pf(wi, tid, buckets);
-      buckets.push(wi, tid);
+    if ((_RANK == 0) && (tid == 0)) {
+      info("Initial set size : " , initial.size());
     }
 
-    runtime.synchronize();
-    run(tid, t1);
+    for (typename InitialWorkItems::size_type i = tid ;
+         i < initial.size(); i+= runtime.get_nthreads()) {
+      //      debug("pushing initial workitems");
+      work_item& wi = initial[i];
+      //pf(wi, tid, buckets);
+      buckets.push_initial(wi, tid);
+    }
+
+    run(tid);
   }
 
 
@@ -193,7 +258,7 @@ public:
       for (typename std::vector<work_item>::size_type i = tid ;
            i < initial.size(); i+= runtime.get_nthreads()) {
         work_item& wi = initial[i];
-        buckets.push(wi, tid);
+        chaotic_buckets.push(wi, tid);
       }
     }
     time_type end = get_time();
@@ -215,6 +280,7 @@ private:
   Runtime& runtime;
   bool should_break;
   all_buckets_t buckets;
+  all_chaotic_bucket_t chaotic_buckets;
   time_type elapsed_time;  
 };
 

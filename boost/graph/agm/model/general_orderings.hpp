@@ -38,6 +38,7 @@
 #define CHAOTIC_ORDERING_T boost::graph::agm::chaotic
 #define DIJKSTRA_ORDERING_T boost::graph::agm::dijkstra<1>
 #define DIJKSTRA_ORDERING_STD_PQ_T boost::graph::agm::dijkstra_std_pq<1>
+#define CC_LEVEL_DIJKSTRA_ORDERING_STD_PQ_T boost::graph::agm::dijkstra_std_pq<2>
 #define DELTA_ORDERING_T boost::graph::agm::delta_ord<1, int>
 #define LEVEL_ORDERING_T boost::graph::agm::level<1>
 #define KLEVEL_ORDERING_T boost::graph::agm::klevel<1>

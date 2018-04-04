@@ -48,18 +48,49 @@ public:
     
     CHAOTIC_ORDERING_T ch;
     DELTA_ORDERING_T deltaord(agm_params.delta);
-    auto config = boost::graph::agm::create_eagm_config(ch,
-                                                        deltaord,
-                                                        ch,
-                                                        ch);    
-    return select_id_distribution(g,
-				  trans,
-				  msg_gen,
-				  gparams,
-				  runtime_params,
-				  agm_params,
-                                  config);
+
+    if (agm_params.pf_mode == agm_pf_preorder) {
+      auto config = boost::graph::agm::create_preorder_eagm_config(deltaord,
+								   ch,
+								   ch,
+								   ch);    
+
+      return select_id_distribution(g,
+				    trans,
+				    msg_gen,
+				    gparams,
+				    runtime_params,
+				    agm_params,
+				    config);
+    } else if (agm_params.pf_mode == agm_pf_postorder) {
+      auto config = boost::graph::agm::create_postorder_eagm_config(deltaord,
+								   ch,
+								   ch,
+								   ch);    
+
+      return select_id_distribution(g,
+				    trans,
+				    msg_gen,
+				    gparams,
+				    runtime_params,
+				    agm_params,
+				    config);
+    } else {
+      auto config = boost::graph::agm::create_eagm_config(deltaord,
+								   ch,
+								   ch,
+								   ch);    
+
+      return select_id_distribution(g,
+				    trans,
+				    msg_gen,
+				    gparams,
+				    runtime_params,
+				    agm_params,
+				    config);
+    }
   }
+  
 };
 
 int main(int argc, char* argv[]) {

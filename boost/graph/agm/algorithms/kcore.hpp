@@ -27,8 +27,8 @@
 //  Authors: Thejaka Kanewala
 //           Andrew Lumsdaine
 
-#ifndef __AGM_PAGE_RANK_HPP__
-#define __AGM_PAGE_RANK_HPP__
+#ifndef __AGM_KCORE_HPP__
+#define __AGM_KCORE_HPP__
 
 #include <boost/config.hpp>
 #include <boost/graph/graph_traits.hpp>
@@ -57,6 +57,84 @@ class kcore_family {
   // destination, level
   typedef std::tuple<Vertex, KCoreType> WorkItem;
 
+  template<typename State>
+  struct pre_order_kcore_pf {
+  public:
+    pre_order_kcore_pf(const Graph& _rg,
+		       State& _st,
+		       agm_work_stats& _sr) : g(_rg),
+					      kcore(_st),
+					      stats(_sr){}
+
+  private:
+    const Graph& g;
+    State& kcore;
+    agm_work_stats& stats;
+
+  public:
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+      Vertex v = std::get<0>(wi);
+      KCoreType core = std::get<1>(wi);
+      
+      KCoreType old_core = kcore[v], last_old_core;
+      while(core < old_core) {
+        last_old_core = old_core;
+        old_core = boost::parallel::val_compare_and_swap(&kcore[v], old_core, core);
+        if (last_old_core == old_core) {
+#ifdef PBGL2_PRINT_WORK_STATS        
+	    if (old_core < boost::out_degree(v, g)) {
+            stats.increment_invalidated(tid);
+	    } else
+            stats.increment_useful(tid);            
+#endif
+
+          outset.push(wi, tid);          
+	  return;
+	}
+      }
+    
+#ifdef PBGL2_PRINT_WORK_STATS                
+      stats.increment_rejected(tid);
+#endif            
+    }
+  };
+
+  template<typename State>
+  struct post_order_kcore_pf {
+  public:
+    post_order_kcore_pf(const Graph& _rg,
+		       State& _st,
+		       agm_work_stats& _sr) : g(_rg),
+					      kcore(_st),
+					      stats(_sr){}
+
+  private:
+    const Graph& g;
+    State& kcore;
+    agm_work_stats& stats;
+
+  public:
+    template<typename buckets>
+    void operator()(const WorkItem& wi,
+                    int tid,
+		    buckets& outset) {
+      Vertex v = std::get<0>(wi);
+      KCoreType core = std::get<1>(wi);
+      KCoreType old_core;
+      __atomic_load(&kcore[v], &old_core, __ATOMIC_SEQ_CST);
+
+      if (core == old_core) {
+	BGL_FORALL_OUTEDGES_T(v, e, g, Graph) {
+	  Vertex u = boost::target(e, g);
+	  WorkItem generated(u, core);
+	  outset.push(generated, tid);
+	}
+      }
+    }
+  };
   
   // the processing function  
   template<typename State>
@@ -186,12 +264,49 @@ public:
 
   template<typename RuntimeModelGen,
            typename EAGMConfig,
-           typename agm_instance_params>
+	   typename KCoreMap,
+	   typename work_item_t,
+	   typename InitialWorkItemSet>
+  time_type execute(Graph& g,
+		    RuntimeModelGen rtmodelgen,
+		    EAGMConfig& config,
+		    KCoreMap& core_state,
+		    InitialWorkItemSet& initial,
+		    pf_exec_mode_preorder mode,
+		    instance_params& runtime_params,
+		    agm_work_stats& sr) {
+
+    info("Setting the processing function ...");
+    // Processing funcion
+    typedef kcore_pf<KCoreMap> ProcessingFunction;
+    ProcessingFunction pf(g, core_state, sr);
+    
+    // KCore algorithm
+    typedef eagm<Graph,
+                 work_item_t,
+                 ProcessingFunction,
+                 EAGMConfig,
+                 RuntimeModelGen,
+                 EMPTY_PF> kcore_eagm_t;
+
+    kcore_eagm_t kcorealgo(rtmodelgen,
+			   config,
+			   pf,
+			   initial);
+
+    
+    info("Invoking KCore algorithm with : ", config.get_pf_mode(mode));
+    return kcorealgo(runtime_params);
+
+  }
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig,
+           typename work_item_t>
   time_type execute_eagm(Graph& g,
                          RuntimeModelGen rtmodelgen,
                          EAGMConfig& config,
                          instance_params& runtime_params,
-                         agm_instance_params& agm_params,
                          agm_work_stats& sr,
                          bool _verify=true) {
     info("Creating the state ...");
@@ -204,7 +319,10 @@ public:
     BGL_FORALL_VERTICES_T(v, g, Graph) { 
       put(core_state, v, boost::out_degree(v, g));
     }    
-    
+
+    typedef typename EAGMConfig::pf_exec_mode_t mode_t;
+    mode_t mode;    
+
     info("Setting the initial work item set ...");
     // Initial work item set
     int nthreads = runtime_params.threads;
@@ -223,33 +341,41 @@ public:
     for (int i = 0; i < (nthreads - 1); ++i)
       threads[i].join();
 
-
-    info("Setting the processing function ...");
-    // Processing funcion
-    typedef kcore_pf<KcoreMap> ProcessingFunction;
-    ProcessingFunction pf(g, core_state, sr);
-    
-    // CC algorithm
-    typedef eagm<Graph,
-                 WorkItem,
-                 ProcessingFunction,
-                 EAGMConfig,
-                 RuntimeModelGen> kcore_eagm_t;
-
-    kcore_eagm_t core(rtmodelgen,
-                      config,
-                      pf,
-                      initial);
-
-    
-    info("Invoking Kcore algorithm ...");
-    time_type elapsed = core(runtime_params);
+    time_type elapsed = execute<RuntimeModelGen,
+				EAGMConfig,
+				KcoreMap,
+				work_item_t,
+				InitialBuffer>(g,
+					       rtmodelgen,
+					       config,
+					       core_state,
+					       initial,
+					       mode,
+					       runtime_params,
+					       sr);
 
     if (_verify) {
       verify(g, core_state);
     }
 
     return elapsed;
+  }
+
+  template<typename RuntimeModelGen,
+           typename EAGMConfig>
+  time_type execute_plain_eagm(Graph& g,
+			       RuntimeModelGen rtmodelgen,
+			       EAGMConfig& config,
+			       instance_params& runtime_params,
+			       agm_work_stats& sr,
+			       bool _verify=true) {
+    return execute_eagm<RuntimeModelGen, EAGMConfig, WorkItem>
+      (g,
+       rtmodelgen,
+       config,
+       runtime_params,
+       sr,
+       _verify);
   }
 };
 }}}

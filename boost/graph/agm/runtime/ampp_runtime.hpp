@@ -144,6 +144,7 @@ private:
   RelaxMessage relax_msg;  
   runtime_stats& stats;
   post_order_processing_function& post_pf;
+  eagm_config_t& eagm_config;
   OutSenderType out_set;
   boost::shared_ptr<amplusplus::detail::barrier> t_bar;
   std::vector<amplusplus::transport::end_epoch_request*> end_epoch_requests;
@@ -188,7 +189,8 @@ private:
   
 public:
   ampp_runtime(const ampp_runtime_gen& _rgen,
-               post_order_processing_function& _sendpf):
+               post_order_processing_function& _sendpf,
+	       eagm_config_t& _config):
     runtime_base(_rgen.rtparams.threads,
                  1,
                  _rgen.transport.size()),
@@ -206,6 +208,7 @@ public:
               amplusplus::no_reduction),    
     stats(_rgen.rt_stats),
     post_pf(_sendpf),
+    eagm_config(_config),
     out_set(relax_msg){
 
     initialize();
@@ -307,6 +310,11 @@ public:
     this->decrease_activity_count(tid, 1);
   }
 
+  void send_no_activity(const work_item& wi, int tid) {
+    post_pf(wi, tid, out_set);
+    stats.increment_sends(tid);    
+  }
+  
   inline int find_numa_node(int tid) {
     return thread_numa_map[tid];
   }
@@ -355,23 +363,32 @@ public:
   
   inline void increase_activity_count(int tid,
                                       uint64_t v,
-                                      CHAOTIC_ORDERING_T) {
+                                      CHAOTIC_ORDERING_T gt,
+				      CHAOTIC_ORDERING_T nt,
+				      CHAOTIC_ORDERING_T nut) {
     transport.increase_activity_count(v);
   }
   
   inline void decrease_activity_count(int tid,
                                       uint64_t v,
-                                      CHAOTIC_ORDERING_T) {
+                                      CHAOTIC_ORDERING_T gt,
+				      CHAOTIC_ORDERING_T nt,
+				      CHAOTIC_ORDERING_T nut) {
     transport.decrease_activity_count(v);
   }
 
-  template<typename T>
-  inline void increase_activity_count(int tid, uint64_t v, T t) {
+  template<typename T1,
+	   typename T2,
+	   typename T3>
+  inline void increase_activity_count(int tid, uint64_t v, T1 t1, T2 t2, T3 t3) {
     active_count.fetch_add(v);
   }
 
-  template<typename T>
-  inline void decrease_activity_count(int tid, uint64_t v, T t) {
+
+  template<typename T1,
+	   typename T2,
+	   typename T3>
+  inline void decrease_activity_count(int tid, uint64_t v, T1 t1, T2 t2, T3 t3) {
     active_count.fetch_sub(v);
   }
 
@@ -381,14 +398,16 @@ public:
   
   inline void increase_activity_count(int tid,
                                       uint64_t v) {
-    global_ordering_t t;
-    increase_activity_count(tid, v, t);
+    increase_activity_count(tid, v, eagm_config.global_ord,
+			    eagm_config.node_ord,
+			    eagm_config.numa_ord);
   }
   
   inline void decrease_activity_count(int tid,
                                       uint64_t v) {
-    global_ordering_t t;
-    decrease_activity_count(tid, v, t);
+    decrease_activity_count(tid, v, eagm_config.global_ord,
+			    eagm_config.node_ord,
+			    eagm_config.numa_ord);
   }
   
   
@@ -401,12 +420,18 @@ public:
   }
 
 
-  template<typename T>
-  bool pull_work(int tid, T, bool checked) {
+  template<typename T1,
+	   typename T2,
+	   typename T3>
+  bool pull_work(int tid, T1, T2, T3, bool checked) {
     return true; // terminated indication
   }
 
-  bool pull_work(int tid, CHAOTIC_ORDERING_T, bool checked) {
+  bool pull_work(int tid, 
+		 CHAOTIC_ORDERING_T gt,  
+		 CHAOTIC_ORDERING_T nd,
+		 CHAOTIC_ORDERING_T nu,
+		 bool checked) {
     assert(end_epoch_requests[tid] != NULL);
     if (checked) {
       return end_epoch_requests[tid]->test();
@@ -422,8 +447,11 @@ public:
   }  
   
   bool pull_work(int tid, bool checked=false) {
-    global_ordering_t t;
-    return pull_work(tid, t, checked);
+    return pull_work(tid, 
+		     eagm_config.global_ord, 
+		     eagm_config.node_ord,
+		     eagm_config.numa_ord,
+		     checked);
   }
   
   void synchronize(){

@@ -35,6 +35,9 @@ namespace boost { namespace graph { namespace agm {
 // EAGM Configuration for Static Spatial Structure (default)
 //=====================================================//
 
+struct pf_exec_mode_preorder{};
+struct pf_exec_mode_postorder{};
+struct pf_exec_mode_splitorder{};
 
 struct buffer_container {};
 struct pq_container {};
@@ -43,6 +46,7 @@ template<typename T1,
          typename T2,
          typename T3,
          typename T4,
+	 typename PFExecMode=pf_exec_mode_splitorder,
          typename node_container=buffer_container,
          typename numa_container=buffer_container>
 class eagm_configs {
@@ -52,6 +56,7 @@ public:
   typedef T2 node_ordering_t;
   typedef T3 numa_ordering_t;
   typedef T4 thread_ordering_t;
+  typedef PFExecMode pf_exec_mode_t;
   typedef node_container node_container_t;
   typedef numa_container numa_container_t;  
 
@@ -60,10 +65,10 @@ public:
                T3 _nuo,
                T4 _to,
 	       bool _forward_scheduler=false) : global_ord(_go),
-					       node_ord(_no),
-					       numa_ord(_nuo),
-					       thread_ord(_to),
-					       forward_scheduler(_forward_scheduler){}
+						node_ord(_no),
+						numa_ord(_nuo),
+						thread_ord(_to),
+						forward_scheduler(_forward_scheduler){}
 
   eagm_configs(const eagm_configs& _ec): global_ord(_ec.global_ord),
                                          node_ord(_ec.node_ord),
@@ -82,6 +87,18 @@ public:
               <<"[Thread:" << base_ordering::get_name(thread_ord.name()) << "]"
               << std::endl;
   }
+
+  std::string get_pf_mode(pf_exec_mode_preorder) {
+    return "PreOrder";
+  }      
+
+  std::string get_pf_mode(pf_exec_mode_postorder) {
+    return "PostOrder";
+  }      
+
+  std::string get_pf_mode(pf_exec_mode_splitorder) {
+    return "SplitOrder";
+  }      
   
 public:
   global_ordering_t global_ord;
@@ -98,7 +115,24 @@ template<typename GT1,
 static auto create_eagm_config(GT1 _t1, GT2 _t2, GT3 _t3, GT4 _t4) -> decltype(eagm_configs<GT1, GT2, GT3, GT4>(_t1, _t2, _t3, _t4)) {
     return eagm_configs<GT1, GT2, GT3, GT4>(_t1, _t2, _t3, _t4);    
   }      
-      
+
+template<typename GT1,
+         typename GT2,
+         typename GT3,
+         typename GT4>
+static auto create_preorder_eagm_config(GT1 _t1, GT2 _t2, GT3 _t3, GT4 _t4) -> decltype(eagm_configs<GT1, GT2, GT3, GT4, pf_exec_mode_preorder>(_t1, _t2, _t3, _t4)) {
+  return eagm_configs<GT1, GT2, GT3, GT4, pf_exec_mode_preorder>(_t1, _t2, _t3, _t4);    
+  }      
+
+template<typename GT1,
+         typename GT2,
+         typename GT3,
+         typename GT4>
+static auto create_postorder_eagm_config(GT1 _t1, GT2 _t2, GT3 _t3, GT4 _t4) -> decltype(eagm_configs<GT1, GT2, GT3, GT4, pf_exec_mode_postorder>(_t1, _t2, _t3, _t4)) {
+  return eagm_configs<GT1, GT2, GT3, GT4, pf_exec_mode_postorder>(_t1, _t2, _t3, _t4);    
+  }      
+
+
 enum spatial_level {
   global = 0,
   node = 1,

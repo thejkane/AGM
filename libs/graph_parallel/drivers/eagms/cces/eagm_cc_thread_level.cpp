@@ -27,13 +27,13 @@
 //  Authors: Thejaka Kanewala
 //           Andrew Lumsdaine
 
-#include "eagm_kcore_base.hpp"
+#include "eagm_cc_base.hpp"
 
 // Static initializations
 using general_orderings = boost::graph::agm::ordering_type_map;
 general_orderings::ordering_map_t general_orderings::ordering_map = general_orderings::create_ordering_map();
 
-class AGMKCoreChaoticExecutor : public AGMKCoreBaseExecutor {
+class AGMCCDeltaExecutor : public AGMCCBaseExecutor {
 
 public:  
   template <typename Graph,
@@ -47,18 +47,48 @@ public:
 		       agm_instance_params& agm_params) {
     
     CHAOTIC_ORDERING_T ch;
-    auto config = boost::graph::agm::create_preorder_eagm_config(ch,
-								 ch,
-								 ch,
-								 ch);    
-    return select_id_distribution(g,
-				  trans,
-				  msg_gen,
-				  gparams,
-				  runtime_params,
-				  agm_params,
-                                  config);
+    CC_LEVEL_DIJKSTRA_ORDERING_STD_PQ_T kord;
+    
+    if (agm_params.pf_mode == agm_pf_preorder) {
+      auto config = boost::graph::agm::create_preorder_eagm_config(ch,
+								   ch,
+								   ch,
+								   kord);    
+      return select_id_distribution_w_level(g,
+					    trans,
+					    msg_gen,
+					    gparams,
+					    runtime_params,
+					    agm_params,
+					    config);
+
+    } else if (agm_params.pf_mode == agm_pf_postorder) {
+      auto config = boost::graph::agm::create_postorder_eagm_config(ch,
+								    ch,
+								    ch,
+								    kord);    
+      return select_id_distribution_w_level(g,
+					    trans,
+					    msg_gen,
+					    gparams,
+					    runtime_params,
+					    agm_params,
+					    config);
+    } else {
+      auto config = boost::graph::agm::create_eagm_config(ch,
+							  ch,
+							  ch,
+							  kord);    
+      return select_id_distribution_w_level(g,
+					    trans,
+					    msg_gen,
+					    gparams,
+					    runtime_params,
+					    agm_params,
+					    config);
+    }
   }
+  
 };
 
 int main(int argc, char* argv[]) {
@@ -68,7 +98,7 @@ int main(int argc, char* argv[]) {
   std::cout << "[INFO] Printing core id for process ..." << std::endl;
   print_core_id();
 
-  executor<AGMKCoreChaoticExecutor, agm_params, agm_instance_params> agm_executor;
+  executor<AGMCCDeltaExecutor, agm_params, agm_instance_params> agm_executor;
   agm_executor.execute(argc, argv);
   boost::graph::agm::ordering_type_map::clear();   
 }

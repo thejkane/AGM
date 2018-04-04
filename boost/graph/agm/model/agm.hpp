@@ -94,7 +94,7 @@ public:
         EAGMConfig& _config,
         PreOrderProcessingFunction& _pf,
         InitialWorkItems& initial_workitems) : empty_pf(),
-                                               runtime(_rtgen, empty_pf),
+                                               runtime(_rtgen, empty_pf, _config),
                                                handler(_config, _pf,
                                                        initial_workitems, runtime),
                                                recv_handler(&handler){
@@ -105,7 +105,7 @@ public:
         EAGMConfig& _config,
         PostOrderProcessingFunction& _sendpf,
         InitialWorkItems& initial_workitems) : empty_pf(),
-                                               runtime(_rtgen, _sendpf),
+                                               runtime(_rtgen, _sendpf, _config),
                                                handler(_config, empty_pf,
                                                        initial_workitems, runtime),
                                                recv_handler(&handler){
@@ -117,7 +117,7 @@ public:
         EAGMConfig& _config,
         PreOrderProcessingFunction& _pf,
         PostOrderProcessingFunction& _sendpf,
-        InitialWorkItems& initial_workitems) : runtime(_rtgen, _sendpf),
+        InitialWorkItems& initial_workitems) : runtime(_rtgen, _sendpf, _config),
                                                handler(_config, _pf,
                                                        initial_workitems, runtime),
                                                recv_handler(&handler){

@@ -51,15 +51,15 @@
 
 //============================== EAGM NODE STRUCTURES ========================================
 namespace boost { namespace graph { namespace agm {
-      
-template<typename work_item, typename current_level_trait>      
+
+template<typename work_item, typename current_level_trait>
 class eagm_node_base {
 public:
   typedef typename current_level_trait::eagm_config eagm_config_t;
   typedef typename current_level_trait::runtime runtime_t;
   typedef typename eagm_config_t::numa_container_t numa_container_t;
-  typedef typename eagm_config_t::node_container_t node_container_t;  
-  
+  typedef typename eagm_config_t::node_container_t node_container_t;
+
   eagm_node_base(const work_item& _rep,
                  const eagm_config_t& _config,
                  runtime_t& _rt) : representation(_rep),
@@ -71,7 +71,7 @@ public:
   const work_item& get_representation() {
     return representation;
   }
-  
+
   void increment_thread_push_counts(int tid) {
     assert(tid < rt.get_nthreads());
     ++thread_push_counts[tid];
@@ -85,41 +85,41 @@ public:
 
     return tot;
   }
-  
+
 
 protected:
-  const work_item representation;  
+  const work_item representation;
   const eagm_config_t& config;
   runtime_t& rt;
-  std::vector<uint64_t> thread_push_counts;  
+  std::vector<uint64_t> thread_push_counts;
 };
-      
+
 template<typename work_item_t,
          typename ordering_t,
-         typename spatial_level,         
+         typename spatial_level,
          typename current_level_trait,
-         typename next_level_trait_t>               
+         typename next_level_trait_t>
 class eagm_node_structure {
 };
 
-// A bucket node that stores priority queues            
+// A bucket node that stores priority queues
 template<typename work_item,
          typename ordering_t,
-         typename current_level_trait>               
+         typename current_level_trait>
 class eagm_node_structure<work_item,
                           ordering_t,
                           boost::graph::agm::spatial_thread_tag,
                           current_level_trait,
                           boost::graph::agm::leaf_level_eagm_trait> : public eagm_node_base<work_item, current_level_trait> {
 
-private:  
+private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
   typedef std::priority_queue<work_item,
                               std::vector<work_item>, ordering_t> DefaultPriorityQueueType;
   typedef std::vector< boost::shared_ptr<DefaultPriorityQueueType> > thread_buckets_t;
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -128,39 +128,38 @@ public:
                                                                              _config,
                                                                              _rt){
     thread_buckets.resize(this->rt.get_nthreads());
-    
+
     for(int i=0; i < this->rt.get_nthreads(); ++i) {
       boost::shared_ptr<DefaultPriorityQueueType>
         p(new DefaultPriorityQueueType(this->config.thread_ord));
       thread_buckets[i].swap(p);
     }
   }
-  
+
   void push_back(const work_item& wi, int tid) {
+    //    fprintf(stderr, "inserting\n");
     thread_buckets[tid]->push(wi);
   }
 
   void process(int tid) {
 
     int flush_frequency = 0;
-    while(true) {
-      while(!thread_buckets[tid]->empty()) {
-	// TODO object copying, but tricky since we need to
-	// pop also
-	work_item wi = thread_buckets[tid]->top();
-	thread_buckets[tid]->pop();      
-	this->rt.send(wi, tid);
 
-	++flush_frequency;
-	if (flush_frequency == this->rt.get_flush_frequency()) {
-	  flush_frequency = 0;
-	  this->rt.pull_work(tid);
-	}
+    while(!thread_buckets[tid]->empty()) {
+      // TODO object copying, but tricky since we need to
+      // pop also
+      work_item wi = thread_buckets[tid]->top();
+      thread_buckets[tid]->pop();
+      this->rt.send(wi, tid);
+
+      ++flush_frequency;
+      if (flush_frequency == this->rt.get_flush_frequency()) {
+        flush_frequency = 0;
+        //debug("pulling work");
+        this->rt.pull_work(tid);
       }
-
-      if(this->rt.pull_work(tid))
-	break;
     }
+
   }
 
   void clear() {
@@ -168,7 +167,7 @@ public:
       assert(thread_buckets[i]->empty());
     }
   }
-  
+
   void print() {
     if (!thread_buckets.empty()) {
       std::cout << "[THREAD_START] " << std::endl;
@@ -201,21 +200,21 @@ private:
 
     std::cout << std::endl;*/
   }
-  
+
   thread_buckets_t thread_buckets;
 };
 
 // A bucket node that sends work items in push
 // represents Global (Chaotic) --> Nil
 template<typename work_item,
-         typename current_level_trait>               
+         typename current_level_trait>
 class eagm_node_structure<work_item,
                           BufferOrdering,
                           boost::graph::agm::spatial_global_all_chaotic_buffer_tag,
                           current_level_trait,
                           boost::graph::agm::leaf_level_eagm_trait>  : public eagm_node_base<work_item, current_level_trait> {
 
-private:  
+private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
@@ -228,7 +227,7 @@ public:
                                                                             _config,
                                                                             _rt){
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     this->rt.send(wi, tid);
   }
@@ -240,7 +239,7 @@ public:
   void print() {
     std::cout << "[Global]{}[Global]";
   }
-  
+
   void clear() {
   }
 
@@ -252,22 +251,22 @@ public:
 // This is quite close to node-->buffer implementation.
 // What is the difference between node-->buffer and global-->buffer
 // The process function in global-->buffer synchronizes, globally
-// but synchronization in node-->buffer is local.      
+// but synchronization in node-->buffer is local.
 template<typename work_item,
-         typename current_level_trait>               
+         typename current_level_trait>
 class eagm_node_structure<work_item,
                           boost::graph::agm::BufferOrdering,
                           boost::graph::agm::spatial_global_buffer_tag,
                           current_level_trait,
                           boost::graph::agm::leaf_level_eagm_trait> : public eagm_node_base<work_item, current_level_trait> {
 
-private:  
+private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
 
   typedef append_buffer<work_item, 10u> Bucket;
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -276,11 +275,11 @@ public:
                                                                              _config,
                                                                              _rt),
     current_bucket_start(0){
-    
+
     boost::shared_ptr<Bucket> p(new Bucket);
     buffer.swap(p);
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     buffer->push_back(std::move(wi));
   }
@@ -293,7 +292,7 @@ public:
     // buffer reaches certain size, clear it.
     // Consider doing this we if we see bad performance
     // also measure the time for clearing.
-    
+
     int nthreads = this->rt.get_nthreads();
     // bucket has parallel work
     typename Bucket::size_type current_bucket_end;
@@ -303,35 +302,35 @@ public:
     this->rt.wait_for_threads_to_reach_here(tid);
     current_bucket_end = buffer->size();
     this->rt.wait_for_threads_to_reach_here(tid);
-    
+
     while(current_bucket_start != current_bucket_end) {
       for (typename Bucket::size_type i = current_bucket_start + tid ;
            i < current_bucket_end ; i+= nthreads) {
         work_item& wi = (*buffer)[i];
         this->rt.send(wi, tid);
       }
-      
+
       this->rt.wait_for_threads_to_reach_here(tid);
       if (tid == 0)
-        current_bucket_start = current_bucket_end;      
+        current_bucket_start = current_bucket_end;
 
       current_bucket_end = buffer->size();
       this->rt.wait_for_threads_to_reach_here(tid);
 
-#ifdef ENABLE_INTERMEDIATE_CLEARING      
+#ifdef ENABLE_INTERMEDIATE_CLEARING
       // by here we know that all threads have the
       // same current_bucket_start and current_bucket_end
       if (current_bucket_start == current_bucket_end) {
         if (this->rt.is_main_thread(tid)) {
           buffer->clear();
         }
-        
+
         // We need this barrier to make a thread may not go
         // and push elements to the bucket while the main
         // thread is clearing the bucket
         this->rt.wait_for_threads_to_reach_here(tid);
       }
-#endif      
+#endif
     }
   }
 
@@ -354,31 +353,31 @@ public:
   void clear() {
     assert(buffer);
     buffer->clear();
-    current_bucket_start = 0;    
+    current_bucket_start = 0;
   }
-  
+
 private:
   boost::shared_ptr<Bucket> buffer;
   typename Bucket::size_type current_bucket_start;
 };
-      
+
 
 // A bucket node that stores an append buffer for a node
-// represents node-->buffer      
+// represents node-->buffer
 template<typename work_item,
-         typename current_level_trait>               
+         typename current_level_trait>
 class eagm_node_structure<work_item,
                           boost::graph::agm::BufferOrdering,
                           boost::graph::agm::spatial_node_buffer_tag,
                           current_level_trait,
                           boost::graph::agm::leaf_level_eagm_trait> : public eagm_node_base<work_item, current_level_trait> {
 
-private:  
+private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
   typedef append_buffer<work_item, 10u> Bucket;
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -386,36 +385,34 @@ public:
                                                         current_level_trait>(_rep,
                                                                              _config,
                                                                              _rt),
-					 current_bucket_start(0),
-					 last_thread_passed(false),
-					 passed_count(0){
+					 current_bucket_start(0) {
     boost::shared_ptr<Bucket> p(new Bucket);
     buffer.swap(p);
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     buffer->push_back(std::move(wi));
   }
 
   void process(int tid) {
-    
+
     int nthreads = this->rt.get_nthreads();
     // bucket has parallel work
     typename Bucket::size_type current_bucket_end;
 
     // Need to make sure all threads have the same
     // current_bucket_end value. We need both barriers.
-    //    fprintf(stderr, "3A:%d:%d\n", tid, _RANK);      
+    //    fprintf(stderr, "3A:%d:%d\n", tid, _RANK);
     this->rt.wait_for_threads_to_reach_here(tid);
-    //    fprintf(stderr, "3B:%d:%d\n", tid, _RANK);      
+    //    fprintf(stderr, "3B:%d:%d\n", tid, _RANK);
 
     current_bucket_end = buffer->size();
 
-    //    fprintf(stderr, "4A:%d:%d\n", tid, _RANK);      
+    //    fprintf(stderr, "4A:%d:%d\n", tid, _RANK);
     this->rt.wait_for_threads_to_reach_here(tid);
-    //    fprintf(stderr, "4B:%d:%d\n", tid, _RANK);      
+    //    fprintf(stderr, "4B:%d:%d\n", tid, _RANK);
 
-    int flush_frequency = 0;    
+    int flush_frequency = 0;
 
     while(current_bucket_start != current_bucket_end) {
       for (typename Bucket::size_type i = current_bucket_start + tid ;
@@ -423,17 +420,17 @@ public:
         work_item& wi = (*buffer)[i];
         this->rt.send(wi, tid);
 
-	++flush_frequency;
+	/*++flush_frequency;
 	if (flush_frequency == this->rt.get_flush_frequency()) {
 	  flush_frequency = 0;
 	  this->rt.pull_work(tid);
-	}
+	  }*/
       }
 
-      bool terminated = false;
-      bool checked = false;
+      //bool terminated = false;
+      //bool checked = false;
       // pull more work
-      while(!last_thread_passed) {
+      /*while(!last_thread_passed) {
 	terminated = this->rt.pull_work(tid, checked);
 	if (!checked && (__atomic_add_fetch(&passed_count,
                                             1,
@@ -442,7 +439,7 @@ public:
 	}
 
         checked = true;
-      }
+	}*/
 
       //fprintf(stderr, "here:%d", passed_count);
       //if (terminated)
@@ -450,29 +447,29 @@ public:
 
       this->rt.wait_for_threads_to_reach_here(tid);
       if (tid == 0) {
-	last_thread_passed = false;
-	passed_count = 0;
-	current_bucket_start = current_bucket_end;      
+	//last_thread_passed = false;
+	//passed_count = 0;
+	current_bucket_start = current_bucket_end;
       }
 
       current_bucket_end = buffer->size();
       this->rt.wait_for_threads_to_reach_here(tid);
 
 
-#ifdef ENABLE_INTERMEDIATE_CLEARING      
+#ifdef ENABLE_INTERMEDIATE_CLEARING
       // by here we know that all threads have the
       // same current_bucket_start and current_bucket_end
       if (current_bucket_start == current_bucket_end) {
         if (this->rt.is_main_thread(tid)) {
           buffer->clear();
         }
-        
+
         // We need this barrier to make a thread may not go
         // and push elements to the bucket while the main
         // thread is clearing the bucket
         this->rt.wait_for_threads_to_reach_here(tid);
       }
-#endif 
+#endif
     }
   }
 
@@ -494,37 +491,37 @@ public:
 
   void clear() {
     buffer->clear();
-    current_bucket_start = 0;    
+    current_bucket_start = 0;
   }
 
   bool empty(int tid) {
     return (buffer->size() == 0);
   }
-  
+
 private:
   boost::shared_ptr<Bucket> buffer;
   typename Bucket::size_type current_bucket_start;
-  bool last_thread_passed;
-  int passed_count;
+  //bool last_thread_passed;
+  //int passed_count;
 };
 
 // A bucket node that stores an append buffer for a numa domain
-// represents numa-->buffer      
+// represents numa-->buffer
 template<typename work_item,
-         typename current_level_trait>               
+         typename current_level_trait>
 class eagm_node_structure<work_item,
                           boost::graph::agm::BufferOrdering,
                           boost::graph::agm::spatial_numa_buffer_tag,
                           current_level_trait,
                           boost::graph::agm::leaf_level_eagm_trait> : public eagm_node_base<work_item, current_level_trait> {
 
-  
+
 private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
   typedef append_buffer<work_item, 10u> Bucket;
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -535,7 +532,7 @@ public:
     boost::shared_ptr<Bucket> p(new Bucket);
     buffer.swap(p);
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     buffer->push_back(std::move(wi));
   }
@@ -549,7 +546,7 @@ public:
     current_bucket_start = 0;
     current_bucket_end = buffer->size();
     this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
-    
+
     while(current_bucket_start != current_bucket_end) {
       for (typename Bucket::size_type i = current_bucket_start + index ;
            i < current_bucket_end ; i+= nthreads) {
@@ -558,14 +555,14 @@ public:
       }
 
       // pull more work
-      this->rt.pull_work(tid);
+      //this->rt.pull_work(tid);
 
       this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
       current_bucket_start = current_bucket_end;
       current_bucket_end = buffer->size();
       this->rt.wait_for_numa_domain_threads_to_reach_here(tid);
 
-#ifdef ENABLE_INTERMEDIATE_CLEARING            
+#ifdef ENABLE_INTERMEDIATE_CLEARING
       if (current_bucket_start == current_bucket_end) {
         if (this->rt.is_main_thread_in_numa_domain(tid)) {
           buffer->clear();
@@ -599,23 +596,23 @@ public:
 
     std::cout << " }[BE]";
   }
-  
+
 private:
   boost::shared_ptr<Bucket> buffer;
 };
-      
 
-// Decleration ...      
+
+// Decleration ...
 template<typename work_item,
          typename eagm_bucket_traits_t>
 class eagm_buckets;
 
-      
+
 // e.g., Global --> Node --> Thread --> Nil
 template<typename work_item,
          typename ordering_t,
          typename current_level_trait,
-         typename next_level_trait>               
+         typename next_level_trait>
 class eagm_node_structure<work_item,
                           ordering_t,
                           boost::graph::agm::spatial_node_tag,
@@ -631,10 +628,10 @@ class eagm_node_structure<work_item,
                 std::is_same<nextrait_spatial, boost::graph::agm::spatial_thread_tag>::value,
                 "nextrait_spatial is not numa nor thread. something is wrong");
 
-private:  
+private:
   // we are at the node level, create a bucket structure
   typedef eagm_buckets<work_item, current_level_trait> node_buckets_t;
-  
+
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
@@ -651,7 +648,7 @@ public:
 
   }
 
-  
+
   void push_back(const work_item& wi, int tid) {
     node_buckets.push(wi, tid);
   }
@@ -683,11 +680,11 @@ private:
 // Global --> Node --> Buffer --> Nil
 // Made this special, because we need to select the node level container
 // type. If EAGM configuration say to use priority queues we use
-// concurrent priority queues otherwise we will use append buffers.      
+// concurrent priority queues otherwise we will use append buffers.
 template<typename work_item,
          typename ordering_t,
          typename current_level_trait,
-         typename next_level_trait>               
+         typename next_level_trait>
 class eagm_node_structure<work_item,
                           ordering_t,
                           boost::graph::agm::spatial_node_select_pq_or_buffer_tag,
@@ -704,12 +701,12 @@ private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
-  
+
   // we are at the node level, create a bucket structure
-  typedef eagm_buckets<work_item, current_level_trait> node_buckets_t;  
+  typedef eagm_buckets<work_item, current_level_trait> node_buckets_t;
   typedef typename eagm_config_t::node_container_t node_container_t;
   typedef boost::graph::agm::concurrent_priority_queue<work_item, ordering_t> concurrent_pq_t;
-  
+
   void initialize(buffer_container) {
     boost::shared_ptr<node_buckets_t> p(new node_buckets_t(this->config, this->rt));
     node_buckets.swap(p);
@@ -718,7 +715,7 @@ private:
   void initialize(pq_container) {
     boost::shared_ptr<concurrent_pq_t> p(new concurrent_pq_t(this->rt.get_nthreads()));
     concurrent_pq.swap(p);
-  }  
+  }
 
   void push_back(const work_item& wi, int tid, buffer_container) {
     node_buckets->push(wi, tid);
@@ -754,16 +751,16 @@ private:
   }
 
   void print(pq_container) {
-    std::cout << "[NODE_START]" << std::endl;    
+    std::cout << "[NODE_START]" << std::endl;
     /*    work_item wi;
     while(concurrent_pq->pop(wi, 0)) {
       std::cout << "(" <<  std::get<0>(wi) << ", "
-                << std::get<1>(wi) << "), "; 
+                << std::get<1>(wi) << "), ";
     }
     std::cout << std::endl;*/
-    std::cout << "[NODE_END]" << std::endl;    
+    std::cout << "[NODE_END]" << std::endl;
   }
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -774,7 +771,7 @@ public:
     node_container_t c;
     initialize(c);
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     node_container_t c;
     push_back(wi, tid, c);
@@ -800,13 +797,13 @@ private:
   boost::shared_ptr<node_buckets_t> node_buckets;
   boost::shared_ptr<concurrent_pq_t> concurrent_pq;
 };
-      
+
 
 // e.g., Global --> Numa --> Thread --> Nil
 template<typename work_item,
          typename ordering_t,
          typename current_level_trait,
-         typename next_level_trait>               
+         typename next_level_trait>
 class eagm_node_structure<work_item,
                           ordering_t,
                           boost::graph::agm::spatial_numa_tag,
@@ -820,7 +817,7 @@ class eagm_node_structure<work_item,
                  std::is_same<nextrait_spatial, boost::graph::agm::spatial_numa_buffer_tag>::value) ,
                 "nextrait_spatial is not thread. something is wrong");
 
-private:  
+private:
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
   // we are at the numa level, create a bucket structure for each numa domain
   typedef eagm_buckets<work_item, current_level_trait> numa_buckets_t;
@@ -838,17 +835,17 @@ public:
     numa_buckets.resize(this->rt.get_nnuma_nodes());
     for(int i=0; i < this->rt.get_nnuma_nodes(); ++i) {
       boost::shared_ptr<numa_buckets_t> p(new numa_buckets_t(this->config, this->rt));
-      numa_buckets[i].swap(p); 
+      numa_buckets[i].swap(p);
     }
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     // allocate memory for buckets in the same context as the tid's numa domain
     int numanode = this->rt.find_numa_node(tid);
-    
+
     assert(numanode < numa_buckets.size());
     assert(numa_buckets[numanode]);
-    
+
     numa_buckets[numanode]->push(wi, tid);
   }
 
@@ -876,9 +873,9 @@ public:
 
   bool empty(int tid) {
     int numanode = this->rt.find_numa_node(tid);
-    numa_buckets[numanode]->empty(tid);    
+    numa_buckets[numanode]->empty(tid);
   }
-  
+
 private:
   all_numa_buckets_t numa_buckets;
 };
@@ -887,11 +884,11 @@ private:
 // Global --> Numa --> Buffer --> Nil
 // Based on the EAGM configuration we decide whether we should
 // use a concurrent priority queue for every NUMA domain or a
-// separate buffer.      
+// separate buffer.
 template<typename work_item,
          typename ordering_t,
          typename current_level_trait,
-         typename next_level_trait>               
+         typename next_level_trait>
 class eagm_node_structure<work_item,
                           ordering_t,
                           boost::graph::agm::spatial_numa_select_pq_or_buffer_tag,
@@ -905,19 +902,19 @@ class eagm_node_structure<work_item,
                 "nextrait_spatial is not numa buffer. something is wrong");
 
   typedef eagm_node_base<work_item,current_level_trait> base_class_t;
-  
+
 private:
 
   typedef typename base_class_t::eagm_config_t eagm_config_t;
   typedef typename base_class_t::runtime_t runtime_t;
-  typedef typename base_class_t::numa_container_t numa_container_t;  
-  
-  typedef eagm_buckets<work_item, current_level_trait> numa_buckets_t;  
+  typedef typename base_class_t::numa_container_t numa_container_t;
+
+  typedef eagm_buckets<work_item, current_level_trait> numa_buckets_t;
   typedef std::vector<boost::shared_ptr<numa_buckets_t> > all_numa_buckets_t;
   // OR
   typedef boost::graph::agm::concurrent_priority_queue<work_item, ordering_t> concurrent_pq_t;
   typedef std::vector<boost::shared_ptr<concurrent_pq_t> > all_numa_pqs_t;
-  
+
   void initialize(buffer_container) {
     numa_buckets.resize(this->rt.get_nnuma_nodes());
 
@@ -938,21 +935,21 @@ private:
       boost::shared_ptr<concurrent_pq_t> p(new concurrent_pq_t(this->rt.get_nthreads()));
       numa_pqs[i].swap(p);
     }
-  }  
+  }
 
   void push_back(const work_item& wi, int tid, buffer_container) {
     // allocate memory for buckets in the same context as the tid's numa domain
     int numanode = this->rt.find_numa_node(tid);
-    
+
     assert(numanode < numa_buckets.size());
     assert(numa_buckets[numanode]);
-    
+
     numa_buckets[numanode]->push(wi, tid);
   }
 
   void push_back(const work_item& wi, int tid, pq_container) {
     int numanode = this->rt.find_numa_node(tid);
-    
+
     assert(numanode < numa_pqs.size());
     assert(numa_pqs[numanode]);
 
@@ -973,8 +970,8 @@ private:
         this->rt.send(wi, tid);
       }
     }
-  }  
-  
+  }
+
   void print(buffer_container) {
     std::cout << "[NUMA_START]" << std::endl;
     for (int i=0; i < numa_buckets.size(); ++i) {
@@ -992,12 +989,12 @@ private:
       work_item wi;
       while(numa_pqs[i]->pop(wi, 0)) {
         std::cout << "(" <<  std::get<0>(wi) << ", "
-                  << std::get<1>(wi) << "), "; 
+                  << std::get<1>(wi) << "), ";
       }
       std::cout << std::endl;
       std::cout << "{DOMAIN:" << i << "-END}" << std::endl;
       }*/
-    std::cout << "[NUMA_END]" << std::endl;    
+    std::cout << "[NUMA_END]" << std::endl;
   }
 
   void clear(buffer_container) {
@@ -1025,7 +1022,7 @@ private:
     int numanode = this->rt.find_numa_node(tid);
     return numa_buckets[numanode]->empty(tid);
   }
-  
+
 public:
   eagm_node_structure(const work_item& _rep,
                       const eagm_config_t& _config,
@@ -1036,7 +1033,7 @@ public:
     numa_container_t c;
     initialize(c);
   }
-  
+
   void push_back(const work_item& wi, int tid) {
     numa_container_t c;
     push_back(wi, tid, c);
@@ -1067,5 +1064,5 @@ private:
   all_numa_pqs_t numa_pqs;
 };
 
-}}}      
+}}}
 #endif

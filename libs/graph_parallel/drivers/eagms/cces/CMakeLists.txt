@@ -116,3 +116,6 @@ endmacro(pbgl_add_target)
 
 pbgl_add_target(eagm_cc_chaotic)
 pbgl_add_target(eagm_cc_delta)
+pbgl_add_target(eagm_cc_level)
+pbgl_add_target(eagm_cc_thread_level)
+pbgl_add_target(eagm_cc_level_thread_dj)
